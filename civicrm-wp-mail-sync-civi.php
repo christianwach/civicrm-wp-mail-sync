@@ -308,6 +308,97 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	
 	
 	
+	//##########################################################################
+	
+	
+	
+	/**
+	 * Get a personalised message
+	 *
+	 * @param int $mailing_id The numerical ID of the Civi mailing
+	 * @param int $contact_id The numerical ID of the Civi contact
+	 * @param str $type Either 'html' or 'text' (default 'html')
+	 * @return str $message The formatted message
+	 */
+	public function message_render( $mailing_id, $contact_id = null, $type = 'html' ) {
+	
+		// init CiviCRM or die
+		if ( ! $this->is_active() ) return false;
+		
+		// if we don't have a passed contact, use logged in user
+		if ( is_null( $contact_id ) ) {
+		
+			// get current user
+			$current_user = wp_get_current_user();
+		
+			// get Civi contact ID
+			$contact_id = $this->get_contact_id_by_user_id( $current_user->ID );
+			
+		}
+		
+		/*
+		// replace tokens (fails due to buggy permissions)
+		$page = new CRM_Mailing_Page_View();
+		$value = $page->run( $mailing_id, $contact_id, FALSE );
+		*/
+		
+		// the following copied from CRM_Mailing_Page_Preview
+		// @see CRM/Mailing/Page/Preview.php
+		
+		// init mailing
+		$mailing = new CRM_Mailing_BAO_Mailing();
+		
+		// set ID
+		$mailing->id = $mailing_id;
+		
+		// find it
+		$mailing->find( true );
+		
+		// replace tokens
+		CRM_Mailing_BAO_Mailing::tokenReplace( $mailing );
+		
+		// get and format attachments
+		$attachments = CRM_Core_BAO_File::getEntityFile( 
+			'civicrm_mailing',
+			$mailing->id
+		);
+
+		// get details of contact with token value including Custom Field Token Values.CRM-3734
+		$returnProperties = $mailing->getReturnProperties();
+		$params = array( 'contact_id' => $contact_id );
+		
+		// get details
+		$details = CRM_Utils_Token::getTokenDetails( $params,
+			$returnProperties,
+			TRUE, TRUE, NULL,
+			$mailing->getFlattenedTokens(),
+			'CRM_Mailing_Page_Preview'
+		);
+		
+		// what a horror!
+		$mime = &$mailing->compose( 
+			NULL, NULL, NULL, $contact_id, 
+			$mailing->from_email, $mailing->from_email,
+			TRUE, $details[0][$contact_id], $attachments
+		);
+
+		if ( $type == 'html' ) {
+			$value = $mime->getHTMLBody();
+		} else {
+			$value = $mime->getTXTBody();
+		}
+		
+		// --<
+		return $value;
+		
+	}
+	
+	
+	
+	//##########################################################################
+	
+	
+	
 	/**
 	 * Get CiviCRM contact ID by WordPress user ID
 	 * 

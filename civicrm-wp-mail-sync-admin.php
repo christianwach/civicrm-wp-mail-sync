@@ -347,11 +347,70 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 	
 	/** 
+	 * Reset plugin back to starting state
+	 *
+	 * @return void
+	 */
+	public function reset_plugin() {
+	
+		// reset posts
+		$this->wp->delete_posts();
+		
+		// clear linkage
+		$this->setting_set( 'linkage', array() );
+		$this->settings_save();
+		
+	}
+	
+	
+		
+	/** 
+	 * Rebuild plugin to current state
+	 *
+	 * @return void
+	 */
+	public function rebuild_plugin() {
+	
+		// get mailings
+		$mailings = $this->civi->get_mailings();
+		
+		// loop through them
+		foreach( $mailings['values'] AS $mailing_id => $mailing ) {
+			
+			// does it have a post?
+			if ( $this->get_post_id_by_mailing_id( $mailing_id ) ) continue;
+			
+			// create a post
+			$post_id = $this->wp->create_post_from_mailing( $mailing_id, $mailing );
+		
+			/*
+			print_r( array( 
+				'mailing_id' => $mailing_id,
+				//'mailing' => $mailing,
+				'post_id' => $post_id,
+			));
+			*/
+			
+		}
+		
+	}
+	
+	
+		
+	/** 
 	 * General debugging utility
 	 *
 	 * @return void
 	 */
 	public function do_debug() {
+		
+		//print_r( array( 'linkage' => $this->setting_get( 'linkage' ) ) ); die();
+		
+		// reset plugin
+		//$this->reset_plugin();
+		
+		// rebuild plugin
+		$this->rebuild_plugin();
 		
 		// disabled
 		return;
@@ -367,30 +426,6 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		$mailings = $this->civi->get_mailings_by_contact_id( $contact_id );
 		print_r( $mailings ); die();
 		*/
-		
-		//print_r( $this->setting_get( 'linkage' ) ); die();
-		
-		// get mailings
-		$mailings = $this->civi->get_mailings();
-		
-		// loop through them
-		foreach( $mailings['values'] AS $mailing_id => $mailing ) {
-			
-			// does it have a post?
-			if ( $this->get_post_id_by_mailing_id( $mailing_id ) ) continue;
-			
-			// create a post
-			$post_id = $this->wp->create_post_from_mailing( $mailing_id, $mailing );
-		
-			///*
-			print_r( array( 
-				'mailing_id' => $mailing_id,
-				//'mailing' => $mailing,
-				'post_id' => $post_id,
-			));
-			//*/
-			
-		}
 		
 		// init $recipients
 		$recipients = array();

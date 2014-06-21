@@ -76,7 +76,8 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		add_action( 'pre_get_posts', array( $this, 'parse_query' ), 100, 1 );
 		
 		// modify the content
-		//add_filter( 'the_content', array( $this, 'parse_content' ), 100, 1 );
+		add_filter( 'the_content', array( $this, 'parse_content' ), 100, 1 );
+		add_filter( 'the_excerpt', array( $this, 'parse_content' ), 100, 1 );
 		
 	}
 	
@@ -235,9 +236,6 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	 */
 	public function delete_post( $post_id, $force_delete ) {
 	
-		// bypass trash
-		$force_delete = true;
-	
 		// delete and return success value
 		return wp_delete_post( $post_id, $force_delete );
 		
@@ -254,11 +252,35 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		
 		// get them
 		$posts = get_posts( array(
-			'post_type' => $this->wp->cpt_name,
+			'post_type' => $this->cpt_name,
 		) );
 		
 		// --<
 		return $posts;
+
+	}
+	
+	
+	
+	/**
+	 * Delete all posts of our custom post type
+	 * 
+	 * @return void
+	 */
+	public function delete_posts() {
+		
+		// get the posts
+		$posts = $this->get_posts();
+		
+		// if we got some
+		if ( count( $posts ) > 0 ) {
+			
+			// delete one by one
+			foreach( $posts AS $post ) {
+				$this->delete_post( $post->ID, true );
+			}
+			
+		}
 
 	}
 	
@@ -351,11 +373,23 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	 * @return str $content
 	 */
 	public function parse_content( $content ) {
-	
+		
 		// reference our post
 		global $post;
 		
-		// replace tokens...
+		// sanity check
+		if ( ! is_object( $post ) ) return $content;
+		
+		// only parse our post type
+		if ( $post->post_type != $this->cpt_name ) return $content;
+		
+		// get mailing for this post
+		$mailing_id = $this->admin->get_mailing_id_by_post_id( $post->ID );
+		
+		//print_r( array( 'mailing_id' => $mailing_id ) ); die();
+		
+		// get rendered content
+		$content = $this->civi->message_render( $mailing_id );
 		
 		// --<
 		return $content;
