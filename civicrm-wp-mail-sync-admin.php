@@ -356,6 +356,94 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		// disabled
 		return;
 		
+		/*
+		// get current user
+		$current_user = wp_get_current_user();
+		
+		// get Civi contact ID
+		$contact_id = $this->civi->get_contact_id_by_user_id( $current_user->ID );
+		
+		// get mailings
+		$mailings = $this->civi->get_mailings_by_contact_id( $contact_id );
+		print_r( $mailings ); die();
+		*/
+		
+		//print_r( $this->setting_get( 'linkage' ) ); die();
+		
+		// get mailings
+		$mailings = $this->civi->get_mailings();
+		
+		// loop through them
+		foreach( $mailings['values'] AS $mailing_id => $mailing ) {
+			
+			// does it have a post?
+			if ( $this->get_post_id_by_mailing_id( $mailing_id ) ) continue;
+			
+			// create a post
+			$post_id = $this->wp->create_post_from_mailing( $mailing_id, $mailing );
+		
+			///*
+			print_r( array( 
+				'mailing_id' => $mailing_id,
+				//'mailing' => $mailing,
+				'post_id' => $post_id,
+			));
+			//*/
+			
+		}
+		
+		// init $recipients
+		$recipients = array();
+		
+		// get mailings
+		$mailings = $this->civi->get_mailings();
+		
+		// loop through them
+		foreach( $mailings['values'] AS $mailing_id => $mailing ) {
+		
+			// get contacts
+			$contacts = $this->civi->get_contacts_by_mailing_id( $mailing_id );
+			
+			// loop through them
+			foreach( $contacts['values'] AS $mailing_id => $mailing_contact ) {
+				
+				// add to recipients array
+				$recipients[] = $mailing_contact['contact_id'];
+		
+			}
+			
+			///*
+			print_r( array( 
+				'mailing_id' => $mailing_id,
+				'mailing' => $mailing,
+				'contacts' => $contacts,
+			));
+			//*/
+			
+		}
+		
+		// init mailings per contact
+		$mailings_by_contact = array();
+		
+		// make unique
+		$recipients = array_unique( $recipients );
+		
+		// loop through them
+		foreach( $recipients AS $contact_id ) {
+			
+			// get mailings
+			$mailings_by_contact[$contact_id] = $this->civi->get_mailings_by_contact_id( $contact_id );
+			
+		}
+		
+		///*
+		print_r( array( 
+			//'mailings' => $mailings,
+			'mailings_by_contact' => $mailings_by_contact,
+			'recipients' => $recipients,
+		)); die();
+		//*/
+	
 	}
 	
 	
@@ -373,6 +461,9 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 		// init return
 		$settings = array();
+		
+		// init linkage array
+		$settings['linkage'] = array();
 	
 		// --<
 		return $settings;
@@ -389,7 +480,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	public function settings_save() {
 		
 		// save array as site option
-		return bpgsites_site_option_set( 'civicrm_wp_mail_sync_settings', $this->settings );
+		return civiwpmailsync_site_option_set( 'civicrm_wp_mail_sync_settings', $this->settings );
 		
 	}
 	
@@ -405,7 +496,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 		// test for null
 		if ( $setting_name == '' ) {
-			die( __( 'You must supply an setting to setting_exists()', 'bpgsites' ) );
+			die( __( 'You must supply an setting to setting_exists()', 'civicrm-wp-mail-sync' ) );
 		}
 	
 		// get existence of setting in array
@@ -426,7 +517,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 		// test for null
 		if ( $setting_name == '' ) {
-			die( __( 'You must supply an setting to setting_get()', 'bpgsites' ) );
+			die( __( 'You must supply an setting to setting_get()', 'civicrm-wp-mail-sync' ) );
 		}
 	
 		// get setting
@@ -447,12 +538,12 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 		// test for null
 		if ( $setting_name == '' ) {
-			die( __( 'You must supply an setting to setting_set()', 'bpgsites' ) );
+			die( __( 'You must supply an setting to setting_set()', 'civicrm-wp-mail-sync' ) );
 		}
 	
 		// test for other than string
 		if ( ! is_string( $setting_name ) ) {
-			die( __( 'You must supply the setting as a string to setting_set()', 'bpgsites' ) );
+			die( __( 'You must supply the setting as a string to setting_set()', 'civicrm-wp-mail-sync' ) );
 		}
 	
 		// set setting
@@ -472,7 +563,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 		// test for null
 		if ( $setting_name == '' ) {
-			die( __( 'You must supply an setting to setting_delete()', 'bpgsites' ) );
+			die( __( 'You must supply an setting to setting_delete()', 'civicrm-wp-mail-sync' ) );
 		}
 	
 		// unset setting
@@ -483,6 +574,113 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 	
 	//##########################################################################
+	
+	
+	
+	/** 
+	 * Link a WordPress post to a CiviCRM mailing
+	 *
+	 * @param int $post_id The numerical ID of the WordPress post
+	 * @param int $mailing_id The numerical ID of the CiviCRM mailing
+	 * @return void
+	 */
+	public function link_post_and_mailing( $post_id, $mailing_id ) {
+		
+		// sanity check incoming values
+		$post_id = absint( $post_id );
+		$mailing_id = absint( $mailing_id );
+		
+		// get linkage array
+		$linkage = $this->setting_get( 'linkage' );
+		
+		// add mailing ID to array keyed by post ID
+		$linkage[$post_id] = $mailing_id;
+		
+		// overwrite setting
+		$this->setting_set( 'linkage', $linkage );
+		
+		// save
+		$this->settings_save();
+		
+	}
+	
+	
+	
+	/** 
+	 * Unlink a WordPress post from a CiviCRM mailing.
+	 *
+	 * @param int $post_id The numerical ID of the WordPress post
+	 * @return void
+	 */
+	public function unlink_post_and_mailing( $post_id ) {
+		
+		// sanity check incoming values
+		$post_id = absint( $post_id );
+		
+		// get linkage array
+		$linkage = $this->setting_get( 'linkage' );
+		
+		// remove entry keyed by post ID
+		unset( $linkage[$post_id] );
+		
+		// overwrite setting
+		$this->setting_set( 'linkage', $linkage );
+		
+		// save
+		$this->settings_save();
+		
+	}
+	
+	
+	
+	/** 
+	 * Get a WordPress post ID from a CiviCRM mailing ID.
+	 *
+	 * @param int $mailing_id The numerical ID of the CiviCRM mailing
+	 * @return int $post_id The numerical ID of the WordPress post
+	 */
+	public function get_post_id_by_mailing_id( $mailing_id ) {
+		
+		// sanity check incoming values
+		$mailing_id = absint( $mailing_id );
+		
+		// get linkage array
+		$linkage = $this->setting_get( 'linkage' );
+		
+		// flip the array
+		$flipped = array_flip( $linkage );
+		
+		// return if it's there
+		if ( isset( $flipped[$mailing_id] ) ) return $flipped[$mailing_id];
+		
+		// fallback
+		return false;
+		
+	}
+	
+	
+	
+	/** 
+	 * Get a CiviCRM mailing ID from a WordPress post ID.
+	 *
+	 * @param int $post_id The numerical ID of the WordPress post
+	 * @return int $mailing_id The numerical ID of the CiviCRM mailing
+	 */
+	public function get_mailing_id_by_post_id( $post_id ) {
+		
+		// sanity check incoming values
+		$post_id = absint( $post_id );
+		
+		// get linkage array
+		$linkage = $this->setting_get( 'linkage' );
+		
+		// return if it's there
+		if ( isset( $linkage[$post_id] ) ) return $linkage[$post_id];
+		
+		// fallback
+		return false;
+		
+	}
 	
 	
 	
