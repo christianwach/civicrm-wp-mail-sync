@@ -266,13 +266,13 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		}
 		
 		// show message
-		//if ( isset( $_GET['updated'] ) AND isset( $_POST['civiwpmailsync_sync'] ) ) {
+		if ( isset( $_GET['updated'] ) AND isset( $_POST['civiwpmailsync_sync'] ) ) {
 			echo '<div id="message" class="updated"><p>' .
 				sprintf(
 					__( 'CiviMail messages synced to WordPress posts. <a href="%s">View message archive</a>.', 'bpwpapers' ),
 					get_post_type_archive_link( $this->wp->get_cpt_name() )
 				) . '</p></div>';
-		//}
+		}
 		
 		// get sanitised admin page url
 		$url = $this->admin_form_url_get();
