@@ -310,50 +310,54 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		if ( ! $query->is_main_query() ) return $query;
 		
 		// bail if not our post type
-		if ( ! is_post_type_archive( $this->cpt_name ) ) return $query;
+		if ( $query->get( 'post_type' ) != $this->cpt_name ) return $query;
 		
+		// if it's our post type's archive page...
+		if ( ! is_post_type_archive( $this->cpt_name ) ) return $query;
+	
 		// init post ID array
 		$post_ids = array();
-		
+
 		// if we're logged in
 		if ( is_user_logged_in() ) {
-		
+	
 			// get current user
 			$current_user = wp_get_current_user();
-		
+	
 			// get Civi contact ID
 			$contact_id = $this->civi->get_contact_id_by_user_id( $current_user->ID );
-		
+	
 			// if we get one
 			if ( $contact_id !== false ) {
-			
+		
 				// get mailings for this user
 				$mailings = $this->civi->get_mailings_by_contact_id( $contact_id );
-				
+			
 				// did we get any?
 				if ( isset( $mailings['values'] ) AND count( $mailings['values'] ) > 0 ) {
-				
+			
 					// get mailing IDs
 					$mailing_ids = array_keys( $mailings['values'] );
-					
+				
 					/*
 					print_r( array( 
 						'mailing_ids' => $mailing_ids,
 					)); //die();
 					*/
-					
+				
 					// get the post IDs
 					foreach( $mailing_ids AS $mailing_id ) {
 						$post_ids[] = $this->admin->get_post_id_by_mailing_id( $mailing_id );
 					}
-				
+			
 				}
-				
+			
 			}
-		
+	
 		}
 		
 		// if $post_ids is empty, pass the largest bigint(20) value to ensure no posts are matched
+		// this is a temporary measure until we have proper checks for the type of email
 		$post_ids = empty( $post_ids ) ? array( '18446744073709551615' ) : $post_ids;
 
 		// restrict to those posts
@@ -399,6 +403,20 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		
 		// --<
 		return $content;
+		
+	}
+	
+	
+	
+	/** 
+	 * Check if we're viewing the mailing archive page
+	 *
+	 * @return bool True if archive page, false otherwise
+	 */
+	public function is_mailing_archive() {
+		
+		// --<
+		return is_post_type_archive( $this->cpt_name );
 		
 	}
 	

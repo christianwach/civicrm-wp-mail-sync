@@ -351,6 +351,47 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	
 	
 	
+	/**
+	 * Check if a Civi Contact was a recipient of a Mailing
+	 *
+	 * @param int $mailing_id The numerical ID of the Civi mailing
+	 * @param int $contact_id The numerical ID of the Civi contact
+	 * @return bool True if contact was a recipient of this mailing, false otherwise
+	 */
+	public function is_recipient( $mailing_id, $contact_id ) {
+	
+		// init CiviCRM or die
+		if ( ! $this->is_active() ) return false;
+		
+		// get mailings
+		$mailings = $this->get_mailings_by_contact_id( $contact_id );
+		
+		/*
+		print_r( array( 
+			'mailing_id' => $mailing_id,
+			'contact_id' => $contact_id,
+			'mailings' => $mailings,
+		) );
+		*/
+		
+		// did we get any?
+		if ( count( $mailings['values'] ) > 0 ) {
+		
+			// get recipient IDs array
+			$mailing_ids = array_keys( $mailings['values'] );
+			
+			// is our mailing in this array?
+			if ( in_array( $mailing_id, $mailing_ids ) ) return true;
+			
+		}
+		
+		// fallback
+		return false;
+		
+	}
+	
+	
+	
 	//##########################################################################
 	
 	
@@ -364,19 +405,19 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @return str $message The formatted message
 	 */
 	public function message_render( $mailing_id, $contact_id = null, $type = 'html' ) {
-	
+		
 		// init CiviCRM or die
 		if ( ! $this->is_active() ) return false;
 		
 		// if we don't have a passed contact, use logged in user
-		if ( is_null( $contact_id ) ) {
+		if ( is_null( $contact_id ) AND is_user_logged_in() ) {
 		
 			// get current user
 			$current_user = wp_get_current_user();
-		
+			
 			// get Civi contact ID
 			$contact_id = $this->get_contact_id_by_user_id( $current_user->ID );
-			
+		
 		}
 		
 		/*
@@ -394,8 +435,33 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		// set ID
 		$mailing->id = $mailing_id;
 		
-		// find it
-		$mailing->find( true );
+		// try and find it
+		if ( ! $mailing->find( true ) ) {
+			
+			// say what?
+			$text = __( '<p>Sorry, this email has not been found.</p>', 'civicrm-wp-mail-sync' );
+		
+			// allow overrides
+			$text = apply_filters( 'civicrm_wp_mail_sync_email_render_not_found', $text, $mailing_id );
+			
+			// --<
+			return $text;
+			
+		}
+		
+		// what's the status of this mailing?
+		if ( ! $this->is_email_viewable( $mailing, $contact_id ) ) {
+			
+			// say what?
+			$text = __( '<p>Sorry, but you are not allowed to view this email.</p>', 'civicrm-wp-mail-sync' );
+		
+			// allow overrides
+			$text = apply_filters( 'civicrm_wp_mail_sync_email_render_not_allowed', $text, $mailing_id );
+			
+			// --<
+			return $text;
+			
+		}
 		
 		// replace tokens
 		CRM_Mailing_BAO_Mailing::tokenReplace( $mailing );
@@ -418,7 +484,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			'CRM_Mailing_Page_Preview'
 		);
 		
-		// what a horror!
+		// what?
 		$mime = &$mailing->compose( 
 			NULL, NULL, NULL, $contact_id, 
 			$mailing->from_email, $mailing->from_email,
@@ -442,6 +508,48 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	
 	
 	
+	/**
+	 * Check if email is viewable
+	 * 
+	 * @param object $mailing The CiviCRM mailing object
+	 * @param int $contact_id The numerical ID of the Civi contact
+	 * @return bool $is_viewable True if viewable, false otherwise
+	 */
+	public function is_email_viewable( $mailing, $contact_id = null ) {
+		
+		// allow if the email is public and user has permissions
+		if ( 
+			$mailing->visibility == 'Public Pages' AND 
+			CRM_Core_Permission::check('view public CiviMail content')
+		) {
+			return true;
+		}
+		
+		// if user is an admin, always allow
+		if (
+			CRM_Core_Permission::check('administer CiviCRM') OR
+			CRM_Core_Permission::check('access CiviMail')
+		) {
+			return true;
+		}
+		
+		// if it's our post type archive page, allow...
+		// because we can only ever see the mailings we've been sent
+		if ( $this->wp->is_mailing_archive() ) return true;
+		
+		// at this point, we *must* have a logged in user
+		if ( ! is_user_logged_in() ) return false;
+		
+		// check if current contact was a recipient
+		if ( $this->is_recipient( $mailing->id, $contact_id ) ) return true;
+		
+		// --<
+		return false;
+		
+	}
+	
+	
+		
 	/**
 	 * Get CiviCRM contact ID by WordPress user ID
 	 * 

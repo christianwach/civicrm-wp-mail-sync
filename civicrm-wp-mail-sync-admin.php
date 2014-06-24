@@ -410,7 +410,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		//$this->reset_plugin();
 		
 		// rebuild plugin
-		$this->rebuild_plugin();
+		//$this->rebuild_plugin();
 		
 		// disabled
 		return;
@@ -456,6 +456,8 @@ class CiviCRM_WP_Mail_Sync_Admin {
 			//*/
 			
 		}
+		
+		die();
 		
 		// init mailings per contact
 		$mailings_by_contact = array();
