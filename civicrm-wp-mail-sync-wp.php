@@ -160,6 +160,12 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	 * @return int $post_id The numeric ID of the new post
 	 */
 	public function create_post_from_mailing( $mailing_id, $mailing ) {
+		
+		// check if we already have a post
+		$existing_post_id = $this->admin->get_post_id_by_mailing_id( $mailing_id );
+		
+		// return it, if we have one
+		if ( $existing_post_id !== false ) return $existing_post_id;
 	
 		// init content
 		$content = '';
