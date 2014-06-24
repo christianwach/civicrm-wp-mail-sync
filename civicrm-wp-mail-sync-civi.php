@@ -116,7 +116,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @param object $objectRef The object
 	 * @return void
 	 */
-	public function template_before_save( $op, $objectName, $objectId, $objectRef ) {
+	public function template_before_save( $op, $objectName, $objectId, &$objectRef ) {
 		
 		// target our operation
 		if ( $op != 'edit' ) return;
@@ -140,7 +140,50 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		*/
 		
 		// create a post from this data
-		$this->wp->create_post_from_mailing( $objectId, $objectRef );
+		$post_id = $this->wp->create_post_from_mailing( $objectId, $objectRef );
+		
+		// make sure we created a post successfully
+		if ( ! $post_id ) return;
+		
+		// get permalink
+		$permalink = get_permalink( $post_id );
+		
+		// append to plain text, if present
+		if ( isset( $objectRef['body_text'] ) ) {
+		
+			// define text and insert permalink
+			$plain_text = sprintf(
+				__( 'Unable to view this email? Click here: %s', 'civicrm-wp-mail-sync' ),
+				$permalink
+			);
+		
+			// allow overrides
+			$plain_text = apply_filters( 'civicrm_wp_mail_sync_mail_plain_url', $plain_text, $post_id );
+			
+			// append to text
+			$objectRef['body_text'] .= "\r\n\r\n" . $plain_text;
+			
+		}
+				
+		// apply to html, if present
+		if ( isset( $objectRef['body_html'] ) ) {
+			
+			// define html and insert permalink
+			$html = sprintf(
+				__( 'Unable to view this email? <a href="%s">Click here to view it in your browser</a>.', 'civicrm-wp-mail-sync' ),
+				$permalink
+			);
+		
+			// allow overrides
+			$html = apply_filters( 'civicrm_wp_mail_sync_mail_html_url', $html, $post_id );
+			
+			// wrap this in a div
+			$html = '<div class="civicrm_wp_mail_sync_url">' . $html . '</div>';
+			
+			// append to HTML
+			$objectRef['body_html'] .= "\r\n\r\n" . $html;
+			
+		}
 		
 	}
 	
@@ -206,7 +249,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			'context' => $context,
 		)); //die();
 		//*/
-	
+		
 	}
 	
 	
