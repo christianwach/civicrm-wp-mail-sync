@@ -1,7 +1,11 @@
 CiviCRM WordPress Mail Sync
 ===========================
 
-The *CiviCRM WordPress Mail Sync* plugin creates WordPress posts from CiviCRM Mailings for viewing email in browser. Regular users will only have access to the mailings that they have (or should have) received.
+The *CiviCRM WordPress Mail Sync* plugin creates WordPress posts from CiviCRM Mailings for viewing email in browser. Regular users only have access to the mailings that they have (or should have) received.
+
+*CiviCRM WordPress Mail Sync* intercepts the setup of each CiviMail Mailing and creates a WordPress post (of a Custom Post Type defined by this plugin) from the content of the mailing. It then injects the permalink to the WordPress post into the foot of the message template. Each mail is therefore viewable within the default post template for your theme, though it can be overridden by using standard WordPress template hierarchy techniques. The plugin replaces the tokens in each email with the values for the person viewing it. Lastly, the plugin filters the WordPress archive query for the Mailing Custom Post Type and allows a logged in user to view all emails they have been sent.
+
+
 
 #### Notes ####
 
