@@ -409,6 +409,20 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	
 	
 	/** 
+	 * Get the name of the custom post type
+	 *
+	 * @return str $cpt_name The name of the custom post type
+	 */
+	public function get_cpt_name() {
+		
+		// --<
+		return $this->cpt_name;
+		
+	}
+	
+	
+	
+	/** 
 	 * Check if we're viewing the mailing archive page
 	 *
 	 * @return bool True if archive page, false otherwise

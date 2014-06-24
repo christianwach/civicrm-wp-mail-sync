@@ -235,6 +235,14 @@ class CiviCRM_WP_Mail_Sync_Admin {
 			return;
 		}
 		
+		// check for sync option
+		if ( isset( $_POST['civiwpmailsync_sync'] ) ) {
+			$settings_sync = absint( $_POST['civiwpmailsync_sync'] );
+			$sync = $settings_sync ? 1 : 0;
+			if ( $sync ) { $this->build_sync(); }
+			return;
+		}
+		
 		// --<
 		return;
 		
@@ -256,6 +264,15 @@ class CiviCRM_WP_Mail_Sync_Admin {
 			wp_die( __( 'You do not have permission to access this page.', 'civicrm-wp-mail-sync' ) );
 			
 		}
+		
+		// show message
+		//if ( isset( $_GET['updated'] ) AND isset( $_POST['civiwpmailsync_sync'] ) ) {
+			echo '<div id="message" class="updated"><p>' .
+				sprintf(
+					__( 'CiviMail messages synced to WordPress posts. <a href="%s">View message archive</a>.', 'bpwpapers' ),
+					get_post_type_archive_link( $this->wp->get_cpt_name() )
+				) . '</p></div>';
+		//}
 		
 		// get sanitised admin page url
 		$url = $this->admin_form_url_get();
@@ -281,22 +298,12 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		
 		';
 		
-		// show debugger
-		echo '
-		<h3>'.__( 'Developer Testing', 'civicrm-wp-mail-sync' ).'</h3> 
-
-		<table class="form-table">
-
-			<tr>
-				<th scope="row">'.__( 'Debug', 'civicrm-wp-mail-sync' ).'</th>
-				<td>
-					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_debug" id="civiwpmailsync_debug" value="1" />
-					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_debug">'.__( 'Check this to trigger do_debug().', 'civiwpmailsync' ).'</label>
-				</td>
-			</tr>
+		// sync options
+		$this->admin_form_sync_option();
 		
-		</table>'."\n\n";
-	
+		// dev options
+		$this->admin_form_dev_option();
+		
 		// close div
 		echo '
 		
@@ -327,6 +334,67 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 	
 	/** 
+	 * Get Sync option
+	 * 
+	 * @return void
+	 */
+	public function admin_form_sync_option() {
+		
+		// show sync
+		echo '
+		<h3>'.__( 'Sync Existing Mailings to WordPress', 'civicrm-wp-mail-sync' ).'</h3>
+
+		<p>'.__( 'WARNING: this will probably only work when there are a reasonably small number of mailings. If you have lots of mailings, it would be better to write some kind of chunked update routine yourself. I will upgrade this plugin to do this at some point.', 'civicrm-wp-mail-sync' ).'</p>
+
+		<table class="form-table">
+
+			<tr>
+				<th scope="row">'.__( 'Sync to WordPress', 'civicrm-wp-mail-sync' ).'</th>
+				<td>
+					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_sync" id="civiwpmailsync_sync" value="1" />
+					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_sync">'.__( 'Check this to sync existing mailings to WordPress.', 'civiwpmailsync' ).'</label>
+				</td>
+			</tr>
+		
+		</table>'."\n\n";
+	
+	}
+	
+	
+	
+	
+	/** 
+	 * Get Developer Testing option
+	 * 
+	 * @return void
+	 */
+	public function admin_form_dev_option() {
+		
+		// bail if debugging not set
+		if ( CIVICRM_WP_MAIL_SYNC_DEBUG !== true ) return;
+	
+		// show debugger
+		echo '
+		<h3>'.__( 'Developer Testing', 'civicrm-wp-mail-sync' ).'</h3> 
+
+		<table class="form-table">
+
+			<tr>
+				<th scope="row">'.__( 'Debug', 'civicrm-wp-mail-sync' ).'</th>
+				<td>
+					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_debug" id="civiwpmailsync_debug" value="1" />
+					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_debug">'.__( 'Check this to trigger do_debug().', 'civiwpmailsync' ).'</label>
+				</td>
+			</tr>
+		
+		</table>'."\n\n";
+	
+	}
+	
+	
+	
+	
+	/** 
 	 * Get the URL for the form action
 	 * 
 	 * @return string $target_url The URL for the admin form action
@@ -351,7 +419,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	 *
 	 * @return void
 	 */
-	public function reset_plugin() {
+	public function clear_sync() {
 	
 		// reset posts
 		$this->wp->delete_posts();
@@ -365,32 +433,41 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	
 		
 	/** 
-	 * Rebuild plugin to current state
+	 * Build plugin to current state
 	 *
 	 * @return void
 	 */
-	public function rebuild_plugin() {
+	public function build_sync() {
 	
 		// get mailings
 		$mailings = $this->civi->get_mailings();
 		
-		// loop through them
-		foreach( $mailings['values'] AS $mailing_id => $mailing ) {
-			
-			// does it have a post?
-			if ( $this->get_post_id_by_mailing_id( $mailing_id ) ) continue;
-			
-			// create a post
-			$post_id = $this->wp->create_post_from_mailing( $mailing_id, $mailing );
+		// did we get any?
+		if ( 
+			$mailings['is_error'] == 0 AND 
+			isset( $mailings['values'] ) AND 
+			count( $mailings['values'] ) > 0 
+		) {
 		
-			/*
-			print_r( array( 
-				'mailing_id' => $mailing_id,
-				//'mailing' => $mailing,
-				'post_id' => $post_id,
-			));
-			*/
+			// loop through them
+			foreach( $mailings['values'] AS $mailing_id => $mailing ) {
 			
+				// does it have a post?
+				if ( $this->get_post_id_by_mailing_id( $mailing_id ) ) continue;
+			
+				// create a post
+				$post_id = $this->wp->create_post_from_mailing( $mailing_id, $mailing );
+		
+				/*
+				print_r( array( 
+					'mailing_id' => $mailing_id,
+					//'mailing' => $mailing,
+					'post_id' => $post_id,
+				));
+				*/
+			
+			}
+		
 		}
 		
 	}
@@ -407,10 +484,10 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		//print_r( array( 'linkage' => $this->setting_get( 'linkage' ) ) ); die();
 		
 		// reset plugin
-		//$this->reset_plugin();
+		//$this->clear_sync();
 		
 		// rebuild plugin
-		//$this->rebuild_plugin();
+		//$this->build_sync();
 		
 		// disabled
 		return;
@@ -456,8 +533,6 @@ class CiviCRM_WP_Mail_Sync_Admin {
 			//*/
 			
 		}
-		
-		die();
 		
 		// init mailings per contact
 		$mailings_by_contact = array();
