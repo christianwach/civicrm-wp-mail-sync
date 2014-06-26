@@ -150,18 +150,31 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		
 		// append to plain text, if present
 		if ( isset( $objectRef['body_text'] ) ) {
-		
-			// define text and insert permalink
-			$plain_text = sprintf(
-				__( 'Unable to view this email? Click here: %s', 'civicrm-wp-mail-sync' ),
-				$permalink
-			);
-		
-			// allow overrides
-			$plain_text = apply_filters( 'civicrm_wp_mail_sync_mail_plain_url', $plain_text, $post_id );
 			
-			// append to text
-			$objectRef['body_text'] .= "\r\n\r\n" . $plain_text;
+			// define text
+			$plain_text = __( 'Unable to view this email? View it here:', 'civicrm-wp-mail-sync' );
+			
+			// allow overrides of the text intro
+			$plain_text = apply_filters( 'civicrm_wp_mail_sync_mail_plain_url', $plain_text );
+			
+			// get possible position of an existing instance of a link
+			$offset = strpos( $objectRef['body_text'], $plain_text );
+			
+			// do we already have an inserted link? (happens in re-used mailings)
+			if ( false !== $offset ) {
+				
+				// strip everything from that point to the end
+				$objectRef['body_text'] = substr_replace( $objectRef['body_text'], '', $offset );
+			
+			} else {
+				
+				// give new link some space
+				$objectRef['body_text'] .= "\r\n\r\n";
+				
+			}
+				
+			// append to text and insert permalink
+			$objectRef['body_text'] .= $plain_text . "\r\n" . $permalink . "\r\n";
 			
 		}
 				
@@ -180,8 +193,25 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			// wrap this in a div
 			$html = '<div class="civicrm_wp_mail_sync_url">' . $html . '</div>';
 			
-			// append to HTML
-			$objectRef['body_html'] .= "\r\n\r\n" . $html;
+			// do we already have an inserted link (happens in re-used mailings)
+			if ( false !== strpos( $objectRef['body_html'], '<!--civicrm-wp-mail-sync-url-->' ) ) {
+				
+				// yes, replace what's between the html comments
+				$objectRef['body_html'] = preg_replace( 
+					'#<!--civicrm-wp-mail-sync-url-->(.*?)<!--civicrm-wp-mail-sync-url-->#s', 
+					$html, // replacement
+					$objectRef['body_html'] // source
+				);
+				
+			} else {
+				
+				// wrap this with two comments (so we can tell if this is a reused template above)
+				$html = '<!--civicrm-wp-mail-sync-url-->' . $html . '<!--/civicrm-wp-mail-syncurl-->';
+				
+				// append to HTML
+				$objectRef['body_html'] .= "\r\n\r\n" . $html;
+				
+			}
 			
 		}
 		
@@ -463,6 +493,10 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			
 		}
 		
+		// set empty header and footer
+		$mailing->header_id = false;
+		$mailing->footer_id = false;
+		
 		// replace tokens
 		CRM_Mailing_BAO_Mailing::tokenReplace( $mailing );
 		
@@ -477,7 +511,8 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$params = array( 'contact_id' => $contact_id );
 		
 		// get details
-		$details = CRM_Utils_Token::getTokenDetails( $params,
+		$details = CRM_Utils_Token::getTokenDetails( 
+			$params,
 			$returnProperties,
 			TRUE, TRUE, NULL,
 			$mailing->getFlattenedTokens(),
