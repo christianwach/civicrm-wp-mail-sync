@@ -77,10 +77,10 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		add_action( 'civicrm_pre', array( $this, 'template_before_save' ), 10, 4 );
 		
 		// intercept Mailing after save
-		add_action( 'civicrm_post', array( $this, 'template_after_save' ), 10, 4 );
+		//add_action( 'civicrm_post', array( $this, 'template_after_save' ), 10, 4 );
 		
 		// intercept Mailing email before send
-		add_action( 'civicrm_alterMailParams', array( $this, 'message_before_send' ), 10, 2 );
+		//add_action( 'civicrm_alterMailParams', array( $this, 'message_before_send' ), 10, 2 );
 		
 		// intercept token values
 		//add_filter( 'civicrm_tokenValues', array( $this, 'token_values' ), 10, 4 );
