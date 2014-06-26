@@ -86,7 +86,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		//add_filter( 'civicrm_tokenValues', array( $this, 'token_values' ), 10, 4 );
 		
 		// intercept tokens
-		//add_filter( 'civicrm_tokens', array( $this, 'which_tokens' ), 10, 4 );
+		//add_filter( 'civicrm_tokens', array( $this, 'tokens' ), 10, 1 );
 		
 	}
 	
@@ -284,16 +284,42 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	/**
 	 * Intercept token values
 	 *
-	 * @param array $contact The CiviCRM contact
-	 * @param int $contact_id The numerical ID of the Civi contact
+	 * @param array $values The token values
+	 * @param array $contact_id An array of numerical IDs of the Civi contacts
 	 * @param int $job_id The job ID
-	 * @param array $tokens The token replacements
+	 * @param array $tokens The tokens whose values need replacing
 	 * @return void
 	 */
-	public function token_values( $contact, $contact_id, $job_id, $tokens ) {
+	public function token_values( &$values, $contact_ids, $job_id = null, $tokens = array() ) {
+		
+		// disabled
+		return;
+		
+		///*
+		print_r( array( 
+			'values' => $values,
+			'contact_ids' => $contact_ids,
+			'job_id' => $job_id,
+			'tokens' => $tokens,
+		)); die();
+		//*/
 		
 		// target our token
 		if ( ! isset( $tokens['mailing']['viewUrl'] ) ) return;
+		
+		// replace view url token?
+		
+	}
+	
+	
+	
+	/**
+	 * Intercept tokens
+	 *
+	 * @param array $tokens The tokens
+	 * @return void
+	 */
+	public function tokens( &$tokens ) {
 		
 		// disabled
 		return;
@@ -302,9 +328,6 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		
 		///*
 		print_r( array( 
-			'contact' => $contact,
-			'contact_id' => $contact_id,
-			'job_id' => $job_id,
 			'tokens' => $tokens,
 		)); die();
 		//*/
