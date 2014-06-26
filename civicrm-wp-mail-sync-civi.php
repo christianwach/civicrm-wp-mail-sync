@@ -281,6 +281,38 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	
 	
 	
+	/**
+	 * Intercept token values
+	 *
+	 * @param array $contact The CiviCRM contact
+	 * @param int $contact_id The numerical ID of the Civi contact
+	 * @param int $job_id The job ID
+	 * @param array $tokens The token replacements
+	 * @return void
+	 */
+	public function token_values( $contact, $contact_id, $job_id, $tokens ) {
+		
+		// target our token
+		if ( ! isset( $tokens['mailing']['viewUrl'] ) ) return;
+		
+		// disabled
+		return;
+		
+		// unset view url token?
+		
+		///*
+		print_r( array( 
+			'contact' => $contact,
+			'contact_id' => $contact_id,
+			'job_id' => $job_id,
+			'tokens' => $tokens,
+		)); die();
+		//*/
+		
+	}
+	
+	
+	
 	//##########################################################################
 	
 	
