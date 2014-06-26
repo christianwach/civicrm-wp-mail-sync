@@ -82,6 +82,12 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		// intercept Mailing email before send
 		add_action( 'civicrm_alterMailParams', array( $this, 'message_before_send' ), 10, 2 );
 		
+		// intercept token values
+		//add_filter( 'civicrm_tokenValues', array( $this, 'token_values' ), 10, 4 );
+		
+		// intercept tokens
+		//add_filter( 'civicrm_tokens', array( $this, 'which_tokens' ), 10, 4 );
+		
 	}
 	
 	
@@ -151,11 +157,8 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		// append to plain text, if present
 		if ( isset( $objectRef['body_text'] ) ) {
 			
-			// define text
-			$plain_text = __( 'Unable to view this email? View it here:', 'civicrm-wp-mail-sync' );
-			
-			// allow overrides of the text intro
-			$plain_text = apply_filters( 'civicrm_wp_mail_sync_mail_plain_url', $plain_text );
+			// get link for insertion
+			$plain_text = $this->get_mail_url_plain( $post_id );
 			
 			// get possible position of an existing instance of a link
 			$offset = strpos( $objectRef['body_text'], $plain_text );
@@ -181,14 +184,8 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		// apply to html, if present
 		if ( isset( $objectRef['body_html'] ) ) {
 			
-			// define html and insert permalink
-			$html = sprintf(
-				__( 'Unable to view this email? <a href="%s">Click here to view it in your browser</a>.', 'civicrm-wp-mail-sync' ),
-				$permalink
-			);
-		
-			// allow overrides
-			$html = apply_filters( 'civicrm_wp_mail_sync_mail_html_url', $html, $post_id );
+			// get link for insertion
+			$html = $this->get_mail_url_html( $permalink, $post_id );
 			
 			// wrap this in a div
 			$html = '<div class="civicrm_wp_mail_sync_url">' . $html . '</div>';
@@ -220,7 +217,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	
 	
 	/**
-	 * Holding...
+	 * Intercept template after it has been saved (unused)
 	 *
 	 * @param string $op The type of database operation
 	 * @param string $objectName The type of object
@@ -612,6 +609,50 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	
 	
 		
+	//##########################################################################
+	
+	
+	
+	/**
+	 * Get text to prefix "View in Browser" link in a plain text message
+	 *
+	 * @return int The numeric ID of the WordPress post
+	 * @return str Text and link to "View in browser"
+	 */
+	public function get_mail_url_plain( $post_id = null ) {
+	
+		// define text
+		$plain_text = __( 'Unable to view this email? View it here:', 'civicrm-wp-mail-sync' );
+		
+		// allow overrides of the text intro
+		return apply_filters( 'civicrm_wp_mail_sync_mail_plain_url', $plain_text, $post_id );
+		
+	}
+	
+	
+	
+	/**
+	 * Get text and link to add "View in Browser" link to an HTML message
+	 *
+	 * @return str The permalink of the WordPress post
+	 * @return int The numeric ID of the WordPress post
+	 * @return str Text and link to "View in browser"
+	 */
+	public function get_mail_url_html( $permalink, $post_id = null ) {
+	
+		// define html and insert permalink
+		$html = sprintf(
+			__( 'Unable to view this email? <a href="%s">Click here to view it in your browser</a>.', 'civicrm-wp-mail-sync' ),
+			$permalink
+		);
+		
+		// allow overrides
+		return apply_filters( 'civicrm_wp_mail_sync_mail_html_url', $html, $post_id );
+		
+	}
+	
+	
+	
 } // class ends
 
 
