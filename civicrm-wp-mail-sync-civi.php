@@ -702,7 +702,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		);
 		
 		// allow overrides
-		return apply_filters( 'civicrm_wp_mail_sync_mail_html_url', $html, $post_id );
+		return apply_filters( 'civicrm_wp_mail_sync_mail_html_url', $html, $permalink, $post_id );
 		
 	}
 	
