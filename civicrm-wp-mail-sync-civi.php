@@ -671,7 +671,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	/**
 	 * Get text to prefix "View in Browser" link in a plain text message
 	 *
-	 * @return int The numeric ID of the WordPress post
+	 * @param int The numeric ID of the WordPress post
 	 * @return str Text and link to "View in browser"
 	 */
 	public function get_mail_url_plain( $post_id = null ) {
@@ -689,8 +689,8 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	/**
 	 * Get text and link to add "View in Browser" link to an HTML message
 	 *
-	 * @return str The permalink of the WordPress post
-	 * @return int The numeric ID of the WordPress post
+	 * @param str The permalink of the WordPress post
+	 * @param int The numeric ID of the WordPress post
 	 * @return str Text and link to "View in browser"
 	 */
 	public function get_mail_url_html( $permalink, $post_id = null ) {
