@@ -1,11 +1,14 @@
 <?php /*
 --------------------------------------------------------------------------------
 Plugin Name: CiviCRM WordPress Mail Sync
+Plugin URI: https://github.com/christianwach/civicrm-wp-mail-sync
 Description: Create WordPress posts from CiviCRM Mailings for viewing email in browser
-Version: 0.1
 Author: Christian Wach
+Version: 0.1
 Author URI: http://haystack.co.uk
-Plugin URI: http://haystack.co.uk
+Text Domain: civicrm-wp-mail-sync
+Domain Path: /languages
+Depends: CiviCRM
 --------------------------------------------------------------------------------
 */
 
