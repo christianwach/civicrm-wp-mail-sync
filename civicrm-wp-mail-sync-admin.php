@@ -173,7 +173,6 @@ class CiviCRM_WP_Mail_Sync_Admin {
 			// add the admin page to the Settings menu
 			$page = add_options_page(
 
-				'settings.php',
 				__( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ),
 				__( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ),
 				'manage_options',
