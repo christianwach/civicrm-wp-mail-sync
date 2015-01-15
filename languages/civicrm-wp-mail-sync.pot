@@ -1,0 +1,171 @@
+# Copyright (C) 2015 CiviCRM WordPress Mail Sync
+# This file is distributed under the same license as the CiviCRM WordPress Mail Sync package.
+msgid ""
+msgstr ""
+"Project-Id-Version: CiviCRM WordPress Mail Sync 0.1\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/civicrm-wp-mail-sync\n"
+"POT-Creation-Date: 2015-01-15 14:12:29+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2015-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: civicrm-wp-mail-sync-admin.php:163 civicrm-wp-mail-sync-admin.php:164
+#: civicrm-wp-mail-sync-admin.php:176 civicrm-wp-mail-sync-admin.php:177
+#: civicrm-wp-mail-sync-admin.php:286
+msgid "CiviCRM WordPress Mail Sync"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:263
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:271
+msgid "CiviMail messages synced to WordPress posts. <a href=\"%s\">View message archive</a>."
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:316
+msgid "Submit"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:344
+msgid "Sync Existing Mailings to WordPress"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:346
+msgid "WARNING: this will probably only work when there are a reasonably small number of mailings. If you have lots of mailings, it would be better to write some kind of chunked update routine yourself. I will upgrade this plugin to do this at some point."
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:351
+msgid "Sync to WordPress"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:354
+msgid "Check this to sync existing mailings to WordPress."
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:377
+msgid "Developer Testing"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:382
+msgid "Debug"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:385
+msgid "Check this to trigger do_debug()."
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:610
+msgid "You must supply an setting to setting_exists()"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:631
+msgid "You must supply an setting to setting_get()"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:652
+msgid "You must supply an setting to setting_set()"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:657
+msgid "You must supply the setting as a string to setting_set()"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:677
+msgid "You must supply an setting to setting_delete()"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:827
+msgid "You must supply an option to civiwpmailsync_site_option_exists()"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:852
+msgid "You must supply an option to civiwpmailsync_site_option_get()"
+msgstr ""
+
+#: civicrm-wp-mail-sync-admin.php:873
+msgid "You must supply an option to civiwpmailsync_site_option_set()"
+msgstr ""
+
+#: civicrm-wp-mail-sync-civi.php:524
+msgid "<p>Sorry, this email has not been found.</p>"
+msgstr ""
+
+#: civicrm-wp-mail-sync-civi.php:538
+msgid "<p>Sorry, but you are not allowed to view this email.</p>"
+msgstr ""
+
+#: civicrm-wp-mail-sync-civi.php:680
+msgid "Unable to view this email? View it here:"
+msgstr ""
+
+#: civicrm-wp-mail-sync-civi.php:700
+msgid "Unable to view this email? <a href=\"%s\">Click here to view it in your browser</a>."
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:106 civicrm-wp-mail-sync-wp.php:129
+#: civicrm-wp-mail-sync-wp.php:131
+msgid "Mailings"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:130
+msgid "Mailing"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:132
+msgid "Add Mailing"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:133
+msgid "Add New Mailing"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:134
+msgid "Edit"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:135
+msgid "Edit Mailing"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:136
+msgid "New Mailing"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:137 civicrm-wp-mail-sync-wp.php:138
+msgid "View Mailing"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:139
+msgid "Search Mailings"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:140
+msgid "No Mailings found"
+msgstr ""
+
+#: civicrm-wp-mail-sync-wp.php:141
+msgid "No Mailings found in Trash"
+msgstr ""
+#. Plugin Name of the plugin/theme
+msgid "CiviCRM WordPress Mail Sync"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "https://github.com/christianwach/civicrm-wp-mail-sync"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Create WordPress posts from CiviCRM Mailings for viewing email in browser"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Christian Wach"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://haystack.co.uk"
+msgstr ""
