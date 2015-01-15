@@ -558,7 +558,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			$mailing->id
 		);
 
-		// get details of contact with token value including Custom Field Token Values.CRM-3734
+		// get details of contact with token value including Custom Field Token Values. See CRM-3734
 		$returnProperties = $mailing->getReturnProperties();
 		$params = array( 'contact_id' => $contact_id );
 

@@ -185,7 +185,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 		// add styles only on our admin page, see:
 		// http://codex.wordpress.org/Function_Reference/wp_enqueue_script#Load_scripts_only_on_plugin_pages
-		//add_action( 'admin_print_styles-'.$page, array( $this, 'add_admin_styles' ) );
+		//add_action( 'admin_print_styles-' . $page, array( $this, 'add_admin_styles' ) );
 
 	}
 
@@ -283,12 +283,12 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 		<div class="icon32" id="icon-options-general"><br/></div>
 
-		<h2>'.__( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ).'</h2>
+		<h2>' . __( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ) . '</h2>
 
-		<form method="post" action="'.htmlentities($url.'&updated=true').'">
+		<form method="post" action="' . htmlentities( $url . '&updated=true' ) . '">
 
-		'.wp_nonce_field( 'civiwpmailsync_admin_action', 'civiwpmailsync_nonce', true, false ).'
-		'.wp_referer_field( false ).'
+		' . wp_nonce_field( 'civiwpmailsync_admin_action', 'civiwpmailsync_nonce', true, false ) . '
+		' . wp_referer_field( false ) . '
 
 		';
 
@@ -313,7 +313,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 		<hr>
 		<p class="submit">
-			<input type="submit" name="civiwpmailsync_submit" value="'.__( 'Submit', 'civicrm-wp-mail-sync' ).'" class="button-primary" />
+			<input type="submit" name="civiwpmailsync_submit" value="' . __( 'Submit', 'civicrm-wp-mail-sync' ) . '" class="button-primary" />
 		</p>
 
 		';
@@ -324,7 +324,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		</form>
 
 		</div>
-		'."\n\n\n\n";
+		' . "\n\n\n\n";
 
 
 
@@ -341,21 +341,21 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 		// show sync
 		echo '
-		<h3>'.__( 'Sync Existing Mailings to WordPress', 'civicrm-wp-mail-sync' ).'</h3>
+		<h3>' . __( 'Sync Existing Mailings to WordPress', 'civicrm-wp-mail-sync' ) . '</h3>
 
-		<p>'.__( 'WARNING: this will probably only work when there are a reasonably small number of mailings. If you have lots of mailings, it would be better to write some kind of chunked update routine yourself. I will upgrade this plugin to do this at some point.', 'civicrm-wp-mail-sync' ).'</p>
+		<p>' . __( 'WARNING: this will probably only work when there are a reasonably small number of mailings. If you have lots of mailings, it would be better to write some kind of chunked update routine yourself. I will upgrade this plugin to do this at some point.', 'civicrm-wp-mail-sync' ) . '</p>
 
 		<table class="form-table">
 
 			<tr>
-				<th scope="row">'.__( 'Sync to WordPress', 'civicrm-wp-mail-sync' ).'</th>
+				<th scope="row">' . __( 'Sync to WordPress', 'civicrm-wp-mail-sync' ) . '</th>
 				<td>
 					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_sync" id="civiwpmailsync_sync" value="1" />
-					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_sync">'.__( 'Check this to sync existing mailings to WordPress.', 'civiwpmailsync' ).'</label>
+					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_sync">' . __( 'Check this to sync existing mailings to WordPress.', 'civiwpmailsync' ) . '</label>
 				</td>
 			</tr>
 
-		</table>'."\n\n";
+		</table>' . "\n\n";
 
 	}
 
@@ -374,19 +374,19 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 		// show debugger
 		echo '
-		<h3>'.__( 'Developer Testing', 'civicrm-wp-mail-sync' ).'</h3>
+		<h3>' . __( 'Developer Testing', 'civicrm-wp-mail-sync' ) . '</h3>
 
 		<table class="form-table">
 
 			<tr>
-				<th scope="row">'.__( 'Debug', 'civicrm-wp-mail-sync' ).'</th>
+				<th scope="row">' . __( 'Debug', 'civicrm-wp-mail-sync' ) . '</th>
 				<td>
 					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_debug" id="civiwpmailsync_debug" value="1" />
-					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_debug">'.__( 'Check this to trigger do_debug().', 'civiwpmailsync' ).'</label>
+					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_debug">' . __( 'Check this to trigger do_debug().', 'civiwpmailsync' ) . '</label>
 				</td>
 			</tr>
 
-		</table>'."\n\n";
+		</table>' . "\n\n";
 
 	}
 
@@ -403,7 +403,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		// sanitise admin page url
 		$target_url = $_SERVER['REQUEST_URI'];
 		$url_array = explode( '&', $target_url );
-		if ( $url_array ) { $target_url = htmlentities( $url_array[0].'&updated=true' ); }
+		if ( $url_array ) { $target_url = htmlentities( $url_array[0] . '&updated=true' ); }
 
 		// --<
 		return $target_url;
