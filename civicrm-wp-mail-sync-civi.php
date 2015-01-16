@@ -28,6 +28,9 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	// WordPress utilities
 	public $wp;
 
+	// CiviCRM version
+	public $civicrm_version;
+
 
 
 	/**
@@ -73,6 +76,9 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 */
 	public function register_hooks() {
 
+		// store Civi version
+		$this->civicrm_version = $this->get_major_version();
+
 		// intercept Mailing before save
 		add_action( 'civicrm_pre', array( $this, 'template_before_save' ), 10, 4 );
 
@@ -87,6 +93,53 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 		// intercept tokens
 		//add_filter( 'civicrm_tokens', array( $this, 'tokens' ), 10, 1 );
+
+	}
+
+
+
+	/**
+	 * Get CiviCRM version
+	 *
+	 * We need to check for the CiviCRM major version, because the handling of
+	 * mailing templates has changed greatly between 4.5.n and 4.6.
+	 *
+	 * @return bool
+	 */
+	public function get_major_version() {
+
+		// init CiviCRM or die
+		if ( ! $this->is_active() ) return false;
+
+		// init return
+		$local_major_version = false;
+
+		// access global
+		global $civicrm_root;
+
+		// construct path to version file
+		$version_file = $civicrm_root . DIRECTORY_SEPARATOR . 'civicrm-version.php';
+
+		// include it, if it exists
+		if ( file_exists( $version_file ) ) require_once $version_file;
+
+		// if we've successfully included it, then the function will exist
+		if ( function_exists( 'civicrmVersion' ) ) {
+
+			// get CiviCRM info
+			$info = civicrmVersion();
+
+			// get version
+			$local_version = trim( $info['version'] );
+
+			// get major version
+			list( $a, $b ) = explode( '.', $local_version );
+			$local_major_version = "$a.$b";
+
+		}
+
+		// --<
+    	return $local_major_version;
 
 	}
 
