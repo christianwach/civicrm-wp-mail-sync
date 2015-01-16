@@ -79,11 +79,28 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		// store Civi version
 		$this->civicrm_version = $this->get_major_version();
 
-		// intercept Mailing before save
-		add_action( 'civicrm_pre', array( $this, 'template_before_save' ), 10, 4 );
+		// test for CiviCRM prior to 4.6
+		if ( version_compare( $this->civicrm_version, '4.6', '<' ) ) {
 
-		// intercept Mailing after save
-		//add_action( 'civicrm_post', array( $this, 'template_after_save' ), 10, 4 );
+			//die('less than 4.6');
+
+			// intercept Mailing before save
+			add_action( 'civicrm_pre', array( $this, 'template_before_save_legacy' ), 10, 4 );
+
+			// intercept Mailing after save
+			add_action( 'civicrm_post', array( $this, 'template_after_save_legacy' ), 10, 4 );
+
+		} else {
+
+			//die('greater than or equal to 4.6');
+
+			// intercept Mailing before save
+			add_action( 'civicrm_pre', array( $this, 'template_before_save' ), 10, 4 );
+
+			// intercept Mailing after save
+			add_action( 'civicrm_post', array( $this, 'template_after_save' ), 10, 4 );
+
+		}
 
 		// intercept Mailing email before send
 		//add_action( 'civicrm_alterMailParams', array( $this, 'message_before_send' ), 10, 2 );
@@ -176,6 +193,68 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @return void
 	 */
 	public function template_before_save( $op, $objectName, $objectId, &$objectRef ) {
+
+		// target our object type
+		if ( $objectName != 'Mailing' ) return;
+
+		///*
+		error_log( print_r( array(
+			'method' => 'template_before_save',
+			'op' => $op,
+			'objectName' => $objectName,
+			'objectId' => $objectId,
+			'objectRef' => $objectRef,
+			//'debug_backtrace' => debug_backtrace( false ),
+		), true ), 3, WP_CONTENT_DIR . '/my-debug.log' );
+		//*/
+
+	}
+
+
+
+	/**
+	 * Intercept template after it has been saved
+	 *
+	 * @param string $op The type of database operation
+	 * @param string $objectName The type of object
+	 * @param integer $objectId The ID of the object
+	 * @param object $objectRef The object
+	 * @return void
+	 */
+	public function template_after_save( $op, $objectName, $objectId, $objectRef ) {
+
+		// target our object type
+		if ( $objectName != 'Mailing' ) return;
+
+		///*
+		error_log( print_r( array(
+			'method' => 'template_after_save',
+			'op' => $op,
+			'objectName' => $objectName,
+			'objectId' => $objectId,
+			'objectRef' => $objectRef,
+			//'debug_backtrace' => debug_backtrace( false ),
+		), true ), 3, WP_CONTENT_DIR . '/my-debug.log' );
+		//*/
+
+	}
+
+
+
+	//##########################################################################
+
+
+
+	/**
+	 * Create a WordPress post from an email template in CiviCRM prior to 4.6
+	 *
+	 * @param string $op The type of database operation
+	 * @param string $objectName The type of object
+	 * @param integer $objectId The ID of the object
+	 * @param object $objectRef The object
+	 * @return void
+	 */
+	public function template_before_save_legacy( $op, $objectName, $objectId, &$objectRef ) {
 
 		// target our operation
 		if ( $op != 'edit' ) return;
@@ -270,7 +349,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 
 	/**
-	 * Intercept template after it has been saved (unused)
+	 * Intercept template after it has been saved in CiviCRM prior to 4.6
 	 *
 	 * @param string $op The type of database operation
 	 * @param string $objectName The type of object
@@ -278,7 +357,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @param object $objectRef The object
 	 * @return void
 	 */
-	public function template_after_save( $op, $objectName, $objectId, $objectRef ) {
+	public function template_after_save_legacy( $op, $objectName, $objectId, $objectRef ) {
 
 		// disabled
 		return;
