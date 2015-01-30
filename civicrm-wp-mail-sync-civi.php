@@ -95,7 +95,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			//die('greater than or equal to 4.6');
 
 			// intercept Mailing before save
-			add_action( 'civicrm_pre', array( $this, 'template_before_save' ), 10, 4 );
+			//add_action( 'civicrm_pre', array( $this, 'template_before_save' ), 10, 4 );
 
 			// intercept Mailing after save
 			add_action( 'civicrm_post', array( $this, 'template_after_save' ), 10, 4 );
@@ -184,7 +184,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 
 	/**
-	 * Create a WordPress post from an email template
+	 * Intercept template before it has been saved
 	 *
 	 * @param string $op The type of database operation
 	 * @param string $objectName The type of object
@@ -196,6 +196,19 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 		// target our object type
 		if ( $objectName != 'Mailing' ) return;
+
+		// because $objectRef can be either object or array, we tread lightly
+		if ( is_object( $objectRef ) ) {
+
+			// make sure we have a message template
+			if ( ! isset( $objectRef->body_html ) AND ! isset( $objectRef->body_text ) ) return;
+
+		} elseif ( is_array( $objectRef ) ) {
+
+			// make sure we have a message template
+			if ( ! isset( $objectRef['body_html'] ) AND ! isset( $objectRef['body_text'] ) ) return;
+
+		}
 
 		///*
 		error_log( print_r( array(
@@ -215,16 +228,40 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	/**
 	 * Intercept template after it has been saved
 	 *
+	 * Create a WordPress post from an email template at the point at which the
+	 * Mailing is scheduled, because prior to this, we do not know what the
+	 * mailing_id is - CiviCRM now seems to increment the ID with every change!
+	 *
+	 * Also update the mailing template and append the permalink to the mailing
+	 * plain text and HTML. The issue with doing this is that we cannot inject
+	 * the link into a sensible place in the template (though plain text emails
+	 * are fine) so in future, we probably want to offer a token.
+	 *
 	 * @param string $op The type of database operation
 	 * @param string $objectName The type of object
 	 * @param integer $objectId The ID of the object
 	 * @param object $objectRef The object
 	 * @return void
 	 */
-	public function template_after_save( $op, $objectName, $objectId, $objectRef ) {
+	public function template_after_save( $op, $objectName, $objectId, &$objectRef ) {
 
 		// target our object type
 		if ( $objectName != 'Mailing' ) return;
+
+		// because $objectRef can be either object or array, we tread lightly
+		if ( is_object( $objectRef ) ) {
+
+			// do not sync on send
+			if ( ! isset( $objectRef->scheduled_id ) ) return;
+			if ( empty( $objectRef->scheduled_id ) ) return;
+
+		} elseif ( is_array( $objectRef ) ) {
+
+			// do not sync on send
+			if ( ! isset( $objectRef['scheduled_id'] ) ) return;
+			if ( empty( $objectRef['scheduled_id'] ) ) return;
+
+		}
 
 		///*
 		error_log( print_r( array(
@@ -357,7 +394,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @param object $objectRef The object
 	 * @return void
 	 */
-	public function template_after_save_legacy( $op, $objectName, $objectId, $objectRef ) {
+	public function template_after_save_legacy( $op, $objectName, $objectId, &$objectRef ) {
 
 		// disabled
 		return;
