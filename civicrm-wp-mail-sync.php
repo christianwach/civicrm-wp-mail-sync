@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 Plugin Name: CiviCRM WordPress Mail Sync
 Plugin URI: https://github.com/christianwach/civicrm-wp-mail-sync
-Description: Create WordPress posts from CiviCRM Mailings for viewing email in browser
+Description: Create WordPress posts from CiviCRM Mailings for viewing email in browser.
 Author: Christian Wach
 Version: 0.2
 Author URI: http://haystack.co.uk
@@ -14,101 +14,113 @@ Depends: CiviCRM
 
 
 
-// set our version here
+// Set our version here.
 define( 'CIVICRM_WP_MAIL_SYNC_VERSION', '0.2' );
 
-// store reference to this file
+// Store reference to this file.
 define( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_FILE', __FILE__ );
 
-// store URL to this plugin's directory
+// Store URL to this plugin's directory.
 if ( ! defined( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_URL' ) ) {
 	define( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_URL', plugin_dir_url( CIVICRM_WP_MAIL_SYNC_PLUGIN_FILE ) );
 }
 
-// store PATH to this plugin's directory
+// Store path to this plugin's directory.
 if ( ! defined( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH' ) ) {
 	define( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH', plugin_dir_path( CIVICRM_WP_MAIL_SYNC_PLUGIN_FILE ) );
 }
 
-// set our debug flag here
+// Set our debug flag here.
 define( 'CIVICRM_WP_MAIL_SYNC_DEBUG', false );
 
 
 
-/*
---------------------------------------------------------------------------------
-CiviCRM_WP_Mail_Sync Class
---------------------------------------------------------------------------------
-*/
-
+/**
+ * CiviCRM WordPress Mail Sync Plugin Class.
+ *
+ * A class that encapsulates plugin functionality.
+ *
+ * @since 0.1
+ */
 class CiviCRM_WP_Mail_Sync {
 
 	/**
-	 * Properties
+	 * Admin Utilities object.
+	 *
+	 * @since 0.1
+	 * @access public
+	 * @var object $civicrm The Admin Utilities object.
 	 */
-
-	// Admin utilities class
 	public $admin;
 
-	// CiviCRM utilities class
+	/**
+	 * CiviCRM Utilities object.
+	 *
+	 * @since 0.1
+	 * @access public
+	 * @var object $civicrm The CiviCRM Utilities object.
+	 */
 	public $civi;
 
-	// WordPress utilities class
+	/**
+	 * WordPress Utilities object.
+	 *
+	 * @since 0.1
+	 * @access public
+	 * @var object $wp The WordPress Utilities object.
+	 */
 	public $wp;
 
 
 
 	/**
-	 * Initialises this object
+	 * Constructor.
 	 *
-	 * @return object
+	 * @since 0.1
 	 */
-	function __construct() {
+	public function __construct() {
 
-		// init loading process
+		// Init loading process
 		$this->initialise();
-
-		// --<
-		return $this;
 
 	}
 
 
 
 	/**
-	 * Do stuff on plugin init
+	 * Do stuff on plugin init.
 	 *
-	 * @return void
+	 * @since 0.1
 	 */
 	public function initialise() {
 
-		// use translation files
+		// Use translation files.
 		add_action( 'plugins_loaded', array( $this, 'enable_translation' ) );
 
-		// load our Admin utility class
+		// Load our Admin utility class.
 		require( CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-admin.php' );
 
-		// instantiate
+		// Instantiate.
 		$this->admin = new CiviCRM_WP_Mail_Sync_Admin();
 
-		// load our CiviCRM utility functions class
+		// Load our CiviCRM utility functions class.
 		require( CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-civi.php' );
 
-		// initialise
+		// Initialise.
 		$this->civi = new CiviCRM_WP_Mail_Sync_CiviCRM;
 
-		// load our WordPress utility functions class
+		// Load our WordPress utility functions class.
 		require( CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-wp.php' );
 
-		// initialise
+		// Initialise.
 		$this->wp = new CiviCRM_WP_Mail_Sync_WordPress;
 
-		// store references
+		// Store references.
 		$this->admin->set_references( $this->wp, $this->civi );
 		$this->civi->set_references( $this->admin, $this->wp );
 		$this->wp->set_references( $this->admin, $this->civi );
 
-		// fire action
+		// Fire action.
 		do_action( 'civicrm_wp_mail_sync_initialised' );
 
 	}
@@ -116,19 +128,19 @@ class CiviCRM_WP_Mail_Sync {
 
 
 	/**
-	 * Do stuff on plugin activation
+	 * Do stuff on plugin activation.
 	 *
-	 * @return void
+	 * @since 0.1
 	 */
 	public function activate() {
 
-		// admin stuff that needs to be done on activation
+		// Admin stuff that needs to be done on activation.
 		$this->admin->activate();
 
-		// register CPT
+		// Register CPT.
 		$this->wp->register_cpt();
 
-		// flush
+		// Flush.
 		flush_rewrite_rules();
 
 	}
@@ -136,16 +148,16 @@ class CiviCRM_WP_Mail_Sync {
 
 
 	/**
-	 * Do stuff on plugin deactivation
+	 * Do stuff on plugin deactivation.
 	 *
-	 * @return void
+	 * @since 0.1
 	 */
 	public function deactivate() {
 
-		// admin stuff that needs to be done on deactivation
+		// Admin stuff that needs to be done on deactivation.
 		$this->admin->deactivate();
 
-		// flush
+		// Flush.
 		flush_rewrite_rules();
 
 	}
@@ -157,26 +169,21 @@ class CiviCRM_WP_Mail_Sync {
 
 
 	/**
-	 * Load translation files
-	 * A good reference on how to implement translation in WordPress:
-	 * http://ottopress.com/2012/internationalization-youre-probably-doing-it-wrong/
+	 * Enable translation.
 	 *
-	 * @return void
+	 * A good reference on how to implement translation in WordPress:
+	 *
+	 * @see http://ottopress.com/2012/internationalization-youre-probably-doing-it-wrong/
+	 *
+	 * @since 0.1
 	 */
 	public function enable_translation() {
 
-		// not used, as there are no translations as yet
+		// Load translations.
 		load_plugin_textdomain(
-
-			// unique name
-			'civicrm-wp-mail-sync',
-
-			// deprecated argument
-			false,
-
-			// relative path to directory containing translation files
-			dirname( plugin_basename( __FILE__ ) ) . '/languages/'
-
+			'civicrm-wp-mail-sync', // Unique name.
+			false, // Deprecated argument.
+			dirname( plugin_basename( CIVICRM_WP_MAIL_SYNC_PLUGIN_FILE ) ) . '/languages/' // Relative path to files.
 		);
 
 	}
@@ -188,42 +195,65 @@ class CiviCRM_WP_Mail_Sync {
 
 
 	/**
-	 * @description: debugging
-	 * @param array $msg
-	 * @return string
+	 * Debugging.
+	 *
+	 * @since 0.1
+	 *
+	 * @param array $msg The message.
 	 */
 	private function _debug( $msg ) {
 
-		// add to internal array
+		// Add to internal array
 		$this->messages[] = $msg;
 
-		// do we want output?
-		if ( CIVICRM_WP_MAIL_SYNC_DEBUG ) print_r( $msg );
+		// Do we want output?
+		if ( CIVICRM_WP_MAIL_SYNC_DEBUG ) {
+			print_r( $msg );
+		}
 
 	}
 
 
 
-} // class ends
+} // Class ends.
 
 
 
+/**
+ * Utility to get a reference to this plugin.
+ *
+ * @since 0.2
+ *
+ * @return CiviCRM_ACF_Integration $civicrm_wp_mail_sync The plugin reference.
+ */
+function civicrm_wp_mail_sync() {
+
+	// Store instance in static variable.
+	static $civicrm_wp_mail_sync = false;
+
+	// Maybe return instance.
+	if ( false === $civicrm_wp_mail_sync ) {
+		$civicrm_wp_mail_sync = new CiviCRM_WP_Mail_Sync();
+	}
+
+	// --<
+	return $civicrm_wp_mail_sync;
+
+}
 
 
 
-// declare as global
-global $civicrm_wp_mail_sync;
+// Initialise plugin now.
+civicrm_wp_mail_sync();
 
-// init plugin
-$civicrm_wp_mail_sync = new CiviCRM_WP_Mail_Sync;
+// Activation.
+register_activation_hook( __FILE__, [ civicrm_wp_mail_sync(), 'activate' ] );
 
-// activation
-register_activation_hook( __FILE__, array( $civicrm_wp_mail_sync, 'activate' ) );
+// Deactivation.
+register_deactivation_hook( __FILE__, [ civicrm_wp_mail_sync(), 'deactivate' ] );
 
-// deactivation
-register_deactivation_hook( __FILE__, array( $civicrm_wp_mail_sync, 'deactivate' ) );
-
-
+// Uninstall uses the 'uninstall.php' method.
+// See: http://codex.wordpress.org/Function_Reference/register_uninstall_hook
 
 
 
