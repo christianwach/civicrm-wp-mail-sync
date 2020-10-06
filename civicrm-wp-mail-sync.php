@@ -142,7 +142,7 @@ class CiviCRM_WP_Mail_Sync {
 		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/civicrm-wp-mail-sync-admin.php';
 
 		// Load our CiviCRM utility functions class.
-		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/civicrm-wp-mail-sync-civi.php';
+		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/civicrm-wp-mail-sync-civicrm.php';
 
 		// Load our WordPress utility functions class.
 		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/civicrm-wp-mail-sync-wp.php';
