@@ -112,7 +112,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	 */
 	public function register_hooks() {
 
-		// Register post type.
+		// Register Custom Post Type.
 		add_action( 'init', [ $this, 'register_cpt' ] );
 
 		// Filter the query.
@@ -126,7 +126,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 
-	//##########################################################################
+	// -------------------------------------------------------------------------
 
 
 
@@ -160,9 +160,9 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			'description' => '',
 			'public' => true,
 			'publicly_queryable' => true,
-			'show_ui' => false,
+			'show_ui' => true,
 			'show_in_nav_menus' => false,
-			'show_in_menu' => false,
+			'show_in_menu' => true,
 			'capability_type' => 'post',
 			'hierarchical' => false,
 			'rewrite' => [
@@ -176,7 +176,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			'can_export' => false,
 			'supports' => [
 				'title',
-				'editor'
+				'editor',
 			],
 			'labels' => [
 				'name' => __( 'Mailings', 'civicrm-wp-mail-sync' ),
@@ -405,13 +405,13 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			$current_user = wp_get_current_user();
 
 			// Get Civi contact ID.
-			$contact_id = $this->civicrm->get_contact_id_by_user_id( $current_user->ID );
+			$contact_id = $this->civicrm->contact_id_get_by_user_id( $current_user->ID );
 
 			// If we get one.
 			if ( $contact_id !== false ) {
 
 				// Get mailings for this user.
-				$mailings = $this->civicrm->get_mailings_by_contact_id( $contact_id );
+				$mailings = $this->civicrm->mailings_get_by_contact_id( $contact_id );
 
 				// Did we get any?
 				if ( isset( $mailings['values'] ) AND count( $mailings['values'] ) > 0 ) {
@@ -470,8 +470,8 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		// Get mailing for this post.
 		$mailing_id = $this->admin->get_mailing_id_by_post_id( $post->ID );
 
-		// Get rendered content
-		$content = $this->civicrm->message_render( $mailing_id );
+		// Get rendered content.
+		$content = $this->civicrm->mailing_render( $mailing_id );
 
 		// --<
 		return $content;

@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 Plugin Name: CiviCRM WordPress Mail Sync
 Plugin URI: https://github.com/christianwach/civicrm-wp-mail-sync
-Description: Create WordPress posts from CiviCRM Mailings for viewing email in browser.
+Description: Create WordPress Posts from CiviCRM Mailings to allow your Users to view their emails in WordPress. <strong>NOTE: This plugin is not for use in production.</strong>
 Author: Christian Wach
 Version: 0.2
 Author URI: http://haystack.co.uk
@@ -173,6 +173,9 @@ class CiviCRM_WP_Mail_Sync {
 	 */
 	public function activate() {
 
+		// Maybe init.
+		$this->initialise();
+
 		// Admin stuff that needs to be done on activation.
 		$this->admin->activate();
 
@@ -193,6 +196,9 @@ class CiviCRM_WP_Mail_Sync {
 	 */
 	public function deactivate() {
 
+		// Maybe init.
+		$this->initialise();
+
 		// Admin stuff that needs to be done on deactivation.
 		$this->admin->deactivate();
 
@@ -200,10 +206,6 @@ class CiviCRM_WP_Mail_Sync {
 		flush_rewrite_rules();
 
 	}
-
-
-
-	//##########################################################################
 
 
 

@@ -98,7 +98,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		$this->wp = $this->plugin->wp;
 
 		// Load settings array.
-		$this->settings = civiwpmailsync_site_option_get( 'civicrm_wp_mail_sync_settings', $this->settings );
+		$this->settings = $this->site_option_get( 'civicrm_wp_mail_sync_settings', $this->settings );
 
 		// Register hooks.
 		$this->register_hooks();
@@ -139,19 +139,19 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	 */
 	public function activate() {
 
-		// Kick out if we are re-activating.
-		if ( civiwpmailsync_site_option_get( 'civicrm_wp_mail_sync_installed', 'false' ) == 'true' ) {
+		// Bail if we are re-activating.
+		if ( $this->site_option_get( 'civicrm_wp_mail_sync_installed', 'false' ) == 'true' ) {
 			return;
 		}
 
 		// Store default settings.
-		civiwpmailsync_site_option_set( 'civicrm_wp_mail_sync_settings', $this->settings_get_defaults() );
+		$this->site_option_set( 'civicrm_wp_mail_sync_settings', $this->settings_get_defaults() );
 
 		// Store version.
-		civiwpmailsync_site_option_set( 'civicrm_wp_mail_sync_version', CIVICRM_WP_MAIL_SYNC_VERSION );
+		$this->site_option_set( 'civicrm_wp_mail_sync_version', CIVICRM_WP_MAIL_SYNC_VERSION );
 
 		// Store installed flag.
-		civiwpmailsync_site_option_set( 'civicrm_wp_mail_sync_installed', 'true' );
+		$this->site_option_set( 'civicrm_wp_mail_sync_installed', 'true' );
 
 	}
 
@@ -170,7 +170,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 
-	//##########################################################################
+	// -------------------------------------------------------------------------
 
 
 
@@ -192,7 +192,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		}
 
 		// Try and update settings.
-		$saved = $this->update_settings();
+		$saved = $this->settings_update_router();
 
 		// Multisite?
 		if ( is_multisite() ) {
@@ -254,35 +254,6 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 	/**
-	 * Update settings supplied by our admin page.
-	 *
-	 * @since 0.1
-	 */
-	public function update_settings() {
-
-	 	// Was the form submitted?
-		if ( ! isset( $_POST['civiwpmailsync_settings_submit'] ) ) {
-			return;
-		}
-
-		// Check that we trust the source of the data
-		check_admin_referer( 'civiwpmailsync_settings_action', 'civiwpmailsync_settings_nonce' );
-
-		// Check for sync option.
-		if ( isset( $_POST['civiwpmailsync_sync'] ) ) {
-			$settings_sync = absint( $_POST['civiwpmailsync_sync'] );
-			$sync = $settings_sync ? 1 : 0;
-			if ( $sync ) {
-				$this->build_sync();
-			}
-			return;
-		}
-
-	}
-
-
-
-	/**
 	 * Show our admin page.
 	 *
 	 * @since 0.1
@@ -296,7 +267,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 		// Maybe show message.
 		if ( isset( $_GET['updated'] ) AND isset( $_POST['civiwpmailsync_sync'] ) ) {
-			$message = '<div id="message" class="updated"><p>' . sprintf(
+			$messages = '<div id="message" class="updated"><p>' . sprintf(
 				__( 'CiviMail messages synced to WordPress posts. <a href="%s">View message archive</a>.', 'civicrm-wp-mail-sync' ),
 				get_post_type_archive_link( $this->wp->get_cpt_name() )
 			) . '</p></div>';
@@ -333,33 +304,58 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 
+	// -------------------------------------------------------------------------
+
+
+
 	/**
-	 * Reset plugin back to starting state.
+	 * Update settings as requested by our admin page.
 	 *
 	 * @since 0.1
 	 */
-	public function clear_sync() {
+	public function settings_update_router() {
 
-		// Reset posts.
-		$this->wp->delete_posts();
+	 	// Bail if the form was not submitted.
+		if ( ! isset( $_POST['civiwpmailsync_settings_submit'] ) ) {
+			return;
+		}
 
-		// Clear linkage.
-		$this->setting_set( 'linkage', [] );
-		$this->settings_save();
+		// Check that we trust the source of the data
+		check_admin_referer( 'civiwpmailsync_settings_action', 'civiwpmailsync_settings_nonce' );
+
+		// Check for sync option.
+		if ( isset( $_POST['civiwpmailsync_sync'] ) ) {
+			$settings_sync = absint( $_POST['civiwpmailsync_sync'] );
+			$sync = $settings_sync ? 1 : 0;
+			if ( $sync ) {
+				$this->mailings_sync_to_wp();
+			}
+			return;
+		}
+
+		// Check for clear option.
+		if ( isset( $_POST['civiwpmailsync_clear'] ) ) {
+			$settings_clear = absint( $_POST['civiwpmailsync_clear'] );
+			$clear = $settings_clear ? 1 : 0;
+			if ( $clear ) {
+				$this->mailings_delete_from_wp();
+			}
+			return;
+		}
 
 	}
 
 
 
 	/**
-	 * Build plugin to current state.
+	 * Sync CiviCRM Mailings to WordPress.
 	 *
 	 * @since 0.1
 	 */
-	public function build_sync() {
+	public function mailings_sync_to_wp() {
 
 		// Get mailings.
-		$mailings = $this->civicrm->get_mailings();
+		$mailings = $this->civicrm->mailings_get_all();
 
 		// Did we get any?
 		if (
@@ -387,142 +383,27 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 
-	//##########################################################################
-
-
-
 	/**
-	 * Get default settings values for this plugin.
+	 * Delete synced CiviCRM Mailings from WordPress.
+	 *
+	 * This resets plugin back to its starting state.
 	 *
 	 * @since 0.1
-	 *
-	 * @return array $settings The default values for this plugin.
 	 */
-	public function settings_get_defaults() {
+	public function mailings_delete_from_wp() {
 
-		// Init return.
-		$settings = [];
+		// Reset posts.
+		$this->wp->delete_posts();
 
-		// Init linkage array.
-		$settings['linkage'] = [];
-
-		// --<
-		return $settings;
+		// Clear linkage.
+		$this->setting_set( 'linkage', [] );
+		$this->settings_save();
 
 	}
 
 
 
-	/**
-	 * Save array as site option.
-	 *
-	 * @since 0.1
-	 *
-	 * @return bool Success or failure
-	 */
-	public function settings_save() {
-
-		// Save array as site option.
-		return civiwpmailsync_site_option_set( 'civicrm_wp_mail_sync_settings', $this->settings );
-
-	}
-
-
-
-	/**
-	 * Return a value for a specified setting.
-	 *
-	 * @since 0.1
-	 *
-	 * @param string $setting_name The name of the setting.
-	 * @return bool Whether or not the setting exists.
-	 */
-	public function setting_exists( $setting_name = '' ) {
-
-		// Test for null.
-		if ( $setting_name == '' ) {
-			die( __( 'You must supply an setting to setting_exists()', 'civicrm-wp-mail-sync' ) );
-		}
-
-		// Get existence of setting in array.
-		return array_key_exists( $setting_name, $this->settings );
-
-	}
-
-
-
-	/**
-	 * Return a value for a specified setting.
-	 *
-	 * @since 0.1
-	 *
-	 * @param string $setting_name The name of the setting.
-	 * @param mixed $default The default value if the setting does not exist.
-	 * @return mixed The setting or the default.
-	 */
-	public function setting_get( $setting_name = '', $default = false ) {
-
-		// Test for null.
-		if ( $setting_name == '' ) {
-			die( __( 'You must supply an setting to setting_get()', 'civicrm-wp-mail-sync' ) );
-		}
-
-		// Get setting.
-		return ( array_key_exists( $setting_name, $this->settings ) ) ? $this->settings[$setting_name] : $default;
-
-	}
-
-
-
-	/**
-	 * Sets a value for a specified setting.
-	 *
-	 * @since 0.1
-	 *
-	 * @param string $setting_name The name of the setting.
-	 * @param mixed $value The value of the setting.
-	 */
-	public function setting_set( $setting_name = '', $value = '' ) {
-
-		// Test for null.
-		if ( $setting_name == '' ) {
-			die( __( 'You must supply an setting to setting_set()', 'civicrm-wp-mail-sync' ) );
-		}
-
-		// Test for other than string.
-		if ( ! is_string( $setting_name ) ) {
-			die( __( 'You must supply the setting as a string to setting_set()', 'civicrm-wp-mail-sync' ) );
-		}
-
-		// Set setting.
-		$this->settings[$setting_name] = $value;
-
-	}
-
-
-
-	/**
-	 * Deletes a specified setting.
-	 *
-	 * @since 0.1
-	 *
-	 * @param string $setting_name The name of the setting.
-	 */
-	public function setting_delete( $setting_name = '' ) {
-
-		// Test for null.
-		if ( $setting_name == '' ) {
-			die( __( 'You must supply an setting to setting_delete()', 'civicrm-wp-mail-sync' ) );
-		}
-
-		// Unset setting.
-		unset( $this->settings[$setting_name] );
-
-	}
-
-
-
-	//##########################################################################
+	// -------------------------------------------------------------------------
 
 
 
@@ -615,6 +496,10 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 
+	// -------------------------------------------------------------------------
+
+
+
 	/**
 	 * Get a CiviCRM mailing ID from a WordPress post ID.
 	 *
@@ -643,90 +528,182 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 
-} // Class ends
+	// -------------------------------------------------------------------------
 
 
 
-/*
-================================================================================
-Globally-available utility functions.
-================================================================================
-The "site_option" functions below are useful because in multisite, they access
-Network Options, while in single-site they access Blog Options.
---------------------------------------------------------------------------------
-*/
+	/**
+	 * Get default settings values for this plugin.
+	 *
+	 * @since 0.1
+	 *
+	 * @return array $settings The default values for this plugin.
+	 */
+	public function settings_get_defaults() {
 
+		// Init return.
+		$settings = [];
 
+		// Init linkage array.
+		$settings['linkage'] = [];
 
-/**
- * Test existence of a specified site option.
- *
- * @since 0.1
- *
- * @param str $option_name The name of the option.
- * @return bool $exists Whether or not the option exists.
- */
-function civiwpmailsync_site_option_exists( $option_name = '' ) {
+		// --<
+		return $settings;
 
-	// Test for null.
-	if ( $option_name == '' ) {
-		die( __( 'You must supply an option to civiwpmailsync_site_option_exists()', 'civicrm-wp-mail-sync' ) );
 	}
 
-	// Test by getting option with unlikely default.
-	if ( civiwpmailsync_site_option_get( $option_name, 'fenfgehgefdfdjgrkj' ) == 'fenfgehgefdfdjgrkj' ) {
-		return false;
-	} else {
-		return true;
+
+
+	/**
+	 * Save array as site option.
+	 *
+	 * @since 0.1
+	 *
+	 * @return bool Success or failure
+	 */
+	public function settings_save() {
+
+		// Save array as site option.
+		return $this->site_option_set( 'civicrm_wp_mail_sync_settings', $this->settings );
+
 	}
 
-}
 
 
+	/**
+	 * Return a value for a specified setting.
+	 *
+	 * @since 0.1
+	 *
+	 * @param string $setting_name The name of the setting.
+	 * @return bool Whether or not the setting exists.
+	 */
+	public function setting_exists( $setting_name = '' ) {
 
-/**
- * Return a value for a specified site option.
- *
- * @since 0.1
- *
- * @param str $option_name The name of the option.
- * @param str $default The default value of the option if it has no value.
- * @return mixed $value the value of the option.
- */
-function civiwpmailsync_site_option_get( $option_name = '', $default = false ) {
+		// Get existence of setting in array.
+		return array_key_exists( $setting_name, $this->settings );
 
-	// Test for null.
-	if ( $option_name == '' ) {
-		die( __( 'You must supply an option to civiwpmailsync_site_option_get()', 'civicrm-wp-mail-sync' ) );
 	}
 
-	// Get option.
-	return get_site_option( $option_name, $default );
-
-}
 
 
+	/**
+	 * Return a value for a specified setting.
+	 *
+	 * @since 0.1
+	 *
+	 * @param string $setting_name The name of the setting.
+	 * @param mixed $default The default value if the setting does not exist.
+	 * @return mixed The setting or the default.
+	 */
+	public function setting_get( $setting_name = '', $default = false ) {
 
-/**
- * Set a value for a specified site option.
- *
- * @since 0.1
- *
- * @param str $option_name The name of the option.
- * @param mixed $value The value to set the option to.
- * @return bool $success If the value of the option was successfully saved.
- */
-function civiwpmailsync_site_option_set( $option_name = '', $value = '' ) {
+		// Get setting.
+		return ( array_key_exists( $setting_name, $this->settings ) ) ? $this->settings[$setting_name] : $default;
 
-	// Test for null.
-	if ( $option_name == '' ) {
-		die( __( 'You must supply an option to civiwpmailsync_site_option_set()', 'civicrm-wp-mail-sync' ) );
 	}
 
-	// Set option.
-	return update_site_option( $option_name, $value );
 
-}
+
+	/**
+	 * Sets a value for a specified setting.
+	 *
+	 * @since 0.1
+	 *
+	 * @param string $setting_name The name of the setting.
+	 * @param mixed $value The value of the setting.
+	 */
+	public function setting_set( $setting_name = '', $value = '' ) {
+
+		// Set setting.
+		$this->settings[$setting_name] = $value;
+
+	}
+
+
+
+	/**
+	 * Deletes a specified setting.
+	 *
+	 * @since 0.1
+	 *
+	 * @param string $setting_name The name of the setting.
+	 */
+	public function setting_delete( $setting_name = '' ) {
+
+		// Unset setting.
+		unset( $this->settings[$setting_name] );
+
+	}
+
+
+
+	// -------------------------------------------------------------------------
+
+
+
+	/**
+	 * Test existence of a specified site option.
+	 *
+	 * @since 0.2
+	 *
+	 * @param str $option_name The name of the option.
+	 * @return bool $exists Whether or not the option exists.
+	 */
+	public function site_option_exists( $option_name = '' ) {
+
+		// Define an unlikely string.
+		$unlikely = 'fenfgehgefdfdjgrkj';
+
+		// Test by getting option with unlikely default.
+		if ( $this->site_option_get( $option_name, $unlikely ) == $unlikely ) {
+			return false;
+		} else {
+			return true;
+		}
+
+	}
+
+
+
+	/**
+	 * Return a value for a specified site option.
+	 *
+	 * @since 0.2
+	 *
+	 * @param str $option_name The name of the option.
+	 * @param str $default The default value of the option if it has no value.
+	 * @return mixed $value the value of the option.
+	 */
+	public function site_option_get( $option_name = '', $default = false ) {
+
+		// Get option.
+		return get_site_option( $option_name, $default );
+
+	}
+
+
+
+	/**
+	 * Set a value for a specified site option.
+	 *
+	 * @since 0.2
+	 *
+	 * @param str $option_name The name of the option.
+	 * @param mixed $value The value to set the option to.
+	 * @return bool $success If the value of the option was successfully saved.
+	 */
+	public function site_option_set( $option_name = '', $value = '' ) {
+
+		// Set option.
+		return update_site_option( $option_name, $value );
+
+	}
+
+
+
+} // Class ends.
+
 
 
 

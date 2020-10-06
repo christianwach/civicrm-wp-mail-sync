@@ -1,14 +1,11 @@
 <!-- assets/templates/wordpress/settings.php -->
 <div class="wrap" id="civiwpmailsync_admin_wrapper">
 
-	<h1><?php _e( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ); ?></a></h1>
+	<h1><?php esc_html_e( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ); ?></a></h1>
 
-	<?php
-
-	// If we've got any messages, show them.
-	if ( isset( $messages ) AND ! empty( $messages ) ) echo $messages;
-
-	?>
+	<?php if ( ! empty( $messages ) ) : ?>
+		<?php echo $messages; ?>
+	<?php endif; ?>
 
 	<form method="post" id="civiwpmailsync_settings_form" action="<?php echo $this->admin_form_url_get(); ?>">
 
@@ -25,17 +22,26 @@
 
 		?>
 
-		<h3><?php _e( 'Sync Existing Mailings to WordPress', 'civicrm-wp-mail-sync' ); ?></h3>
+		<h3><?php esc_html_e( 'Developer Utilities', 'civicrm-wp-mail-sync' ); ?></h3>
 
-		<p><?php _e( 'WARNING: this will probably only work when there are a reasonably small number of mailings. If you have lots of mailings, it would be better to write some kind of chunked update routine yourself.', 'civicrm-wp-mail-sync' ); ?></p>
+		<p><?php esc_html_e( 'Please note that this plugin is in the early stages of development and not intended for use in production.', 'civicrm-wp-mail-sync' ); ?></p>
 
 		<table class="form-table">
 
 			<tr>
-				<th scope="row"><?php _e( 'Sync to WordPress', 'civicrm-wp-mail-sync' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Sync Mailings to WordPress', 'civicrm-wp-mail-sync' ); ?></th>
 				<td>
 					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_sync" id="civiwpmailsync_sync" value="1" />
-					<label class="civiwpmailsync_settings_label" for="civiwpmailsync_sync"><?php _e( 'Check this to sync existing mailings to WordPress.', 'civicrm-wp-mail-sync' ); ?></label>
+					<label class="civiwpmailsync_settings_label" for="civiwpmailsync_sync"><?php esc_html_e( 'Check this to sync existing CiviCRM Mailings to WordPress.', 'civicrm-wp-mail-sync' ); ?></label>
+					<p class="description"><?php esc_html_e( 'WARNING: this will probably only work when there are a small number of mailings.', 'civicrm-wp-mail-sync' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Delete Mailings from WordPress', 'civicrm-wp-mail-sync' ); ?></th>
+				<td>
+					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_clear" id="civiwpmailsync_clear" value="1" />
+					<label class="civiwpmailsync_settings_label" for="civiwpmailsync_clear"><?php esc_html_e( 'Check this to clear synced Mailings from WordPress.', 'civicrm-wp-mail-sync' ); ?></label>
 				</td>
 			</tr>
 
@@ -55,7 +61,7 @@
 		?>
 
 		<p class="submit">
-			<input class="button-primary" type="submit" id="civiwpmailsync_settings_submit" name="civiwpmailsync_settings_submit" value="<?php _e( 'Save Changes', 'civicrm-event-organiser' ); ?>" />
+			<input class="button-primary" type="submit" id="civiwpmailsync_settings_submit" name="civiwpmailsync_settings_submit" value="<?php esc_attr_e( 'Save Changes', 'civicrm-wp-mail-sync' ); ?>" />
 		</p>
 
 	</form>
