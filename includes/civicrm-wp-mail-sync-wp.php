@@ -73,9 +73,6 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		// Initialise on "civicrm_wp_mail_sync_initialised".
 		add_action( 'civicrm_wp_mail_sync_initialised', [ $this, 'initialise' ] );
 
-		// Register hooks on WordPress plugins loaded.
-		add_action( 'plugins_loaded', [ $this, 'register_hooks' ] );
-
 	}
 
 
