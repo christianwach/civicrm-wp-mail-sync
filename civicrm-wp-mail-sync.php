@@ -30,11 +30,6 @@ if ( ! defined( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH' ) ) {
 	define( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH', plugin_dir_path( CIVICRM_WP_MAIL_SYNC_PLUGIN_FILE ) );
 }
 
-// Set our debug flag here.
-if ( ! defined( 'CIVICRM_WP_MAIL_SYNC_DEBUG' ) ) {
-	define( 'CIVICRM_WP_MAIL_SYNC_DEBUG', false );
-}
-
 
 
 /**
@@ -229,31 +224,6 @@ class CiviCRM_WP_Mail_Sync {
 			false, // Deprecated argument.
 			dirname( plugin_basename( CIVICRM_WP_MAIL_SYNC_PLUGIN_FILE ) ) . '/languages/' // Relative path to files.
 		);
-
-	}
-
-
-
-	//##########################################################################
-
-
-
-	/**
-	 * Debugging.
-	 *
-	 * @since 0.1
-	 *
-	 * @param array $msg The message.
-	 */
-	private function _debug( $msg ) {
-
-		// Add to internal array
-		$this->messages[] = $msg;
-
-		// Do we want output?
-		if ( CIVICRM_WP_MAIL_SYNC_DEBUG ) {
-			print_r( $msg );
-		}
 
 	}
 
