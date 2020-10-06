@@ -23,11 +23,20 @@ defined( 'ABSPATH' ) || exit;
 class CiviCRM_WP_Mail_Sync_WordPress {
 
 	/**
+	 * Plugin object.
+	 *
+	 * @since 0.2
+	 * @access public
+	 * @var object $plugin The plugin object.
+	 */
+	public $plugin;
+
+	/**
 	 * Admin Utilities object.
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var object $civicrm The Admin Utilities object.
+	 * @var object $admin The Admin Utilities object.
 	 */
 	public $admin;
 
@@ -38,7 +47,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	 * @access public
 	 * @var object $civicrm The CiviCRM Utilities object.
 	 */
-	public $civi;
+	public $civicrm;
 
 	/**
 	 * CPT name.
@@ -56,51 +65,62 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	 *
 	 * @since 0.1
 	 */
-	public function __construct() {
+	public function __construct( $plugin ) {
+
+		// Store reference to plugin.
+		$this->plugin = $plugin;
+
+		// Initialise on "civicrm_wp_mail_sync_initialised".
+		add_action( 'civicrm_wp_mail_sync_initialised', [ $this, 'initialise' ] );
 
 		// Register hooks on WordPress plugins loaded.
-		add_action( 'plugins_loaded', array( $this, 'register_hooks' ) );
+		add_action( 'plugins_loaded', [ $this, 'register_hooks' ] );
 
 	}
 
 
 
 	/**
-	 * Set references to other objects.
+	 * Initialise.
 	 *
-	 * @since 0.1
-	 *
-	 * @param object $admin_object Reference to this plugin's Admin object.
-	 * @param object $civi_object Reference to this plugin's CIviCRM object.
+	 * @since 0.2
 	 */
-	public function set_references( $admin_object, $civi_object ) {
+	public function initialise() {
 
-		// Store reference to Admin object.
-		$this->admin = $admin_object;
+		// Store references to other objects.
+		$this->admin = $this->plugin->admin;
+		$this->civicrm = $this->plugin->civicrm;
 
-		// Store reference to CiviCRM object.
-		$this->civi = $civi_object;
+		// Register hooks.
+		$this->register_hooks();
+
+		/**
+		 * Broadcast that this class is now loaded.
+		 *
+		 * @since 0.2
+		 */
+		do_action( 'civicrm_wp_mail_sync_wp_initialised' );
 
 	}
 
 
 
 	/**
-	 * Register hooks on plugins loaded.
+	 * Register hooks.
 	 *
 	 * @since 0.1
 	 */
 	public function register_hooks() {
 
 		// Register post type.
-		add_action( 'init', array( $this, 'register_cpt' ) );
+		add_action( 'init', [ $this, 'register_cpt' ] );
 
 		// Filter the query.
-		add_action( 'pre_get_posts', array( $this, 'parse_query' ), 100, 1 );
+		add_action( 'pre_get_posts', [ $this, 'parse_query' ], 100, 1 );
 
 		// Modify the content.
-		add_filter( 'the_content', array( $this, 'parse_content' ), 100, 1 );
-		add_filter( 'the_excerpt', array( $this, 'parse_content' ), 100, 1 );
+		add_filter( 'the_content', [ $this, 'parse_content' ], 100, 1 );
+		add_filter( 'the_excerpt', [ $this, 'parse_content' ], 100, 1 );
 
 	}
 
@@ -123,8 +143,18 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			return;
 		}
 
+		/**
+		 * Filter the CPT slug.
+		 *
+		 * @since 0.1
+		 *
+		 * @param str The default slug.
+		 * @return str The modified slug.
+		 */
+		$slug = apply_filters( 'civicrm_wp_mail_sync_cpt_slug', 'mailings' );
+
 		// Mailing CPT.
-		register_post_type( $this->cpt_name, array(
+		register_post_type( $this->cpt_name, [
 
 			'label' => __( 'Mailings' ),
 			'description' => '',
@@ -135,20 +165,20 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			'show_in_menu' => false,
 			'capability_type' => 'post',
 			'hierarchical' => false,
-			'rewrite' => array(
-				'slug' => apply_filters( 'civicrm_wp_mail_sync_cpt_slug', 'mailings' ),
+			'rewrite' => [
+				'slug' => $slug,
 				'with_front' => false,
 				'feeds' => false,
-			),
+			],
 			'has_archive' => true,
 			'query_var' => true,
 			'exclude_from_search' => true,
 			'can_export' => false,
-			'supports' => array(
+			'supports' => [
 				'title',
 				'editor'
-			),
-			'labels' => array (
+			],
+			'labels' => [
 				'name' => __( 'Mailings', 'civicrm-wp-mail-sync' ),
 				'singular_name' => __( 'Mailing', 'civicrm-wp-mail-sync' ),
 				'menu_name' => __( 'Mailings', 'civicrm-wp-mail-sync' ),
@@ -162,9 +192,9 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 				'search_items' => __( 'Search Mailings', 'civicrm-wp-mail-sync' ),
 				'not_found' => __( 'No Mailings found', 'civicrm-wp-mail-sync' ),
 				'not_found_in_trash' => __( 'No Mailings found in Trash', 'civicrm-wp-mail-sync' ),
-			)
+			],
 
-		) );
+		] );
 
 		//flush_rewrite_rules();
 
@@ -237,7 +267,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	public function create_post( $title, $content ) {
 
 		// Define mailing post.
-		$post = array(
+		$post = [
 			'post_status' => 'publish',
 			'post_type' => $this->cpt_name,
 			'post_content' => $content,
@@ -247,13 +277,17 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			'to_ping' => '', // Quick fix for Windows.
 			'pinged' => '', // Quick fix for Windows.
 			'post_content_filtered' => '', // Quick fix for Windows.
-		);
+		];
 
-		// Allow overrides of title.
-		$post['post_title'] = apply_filters(
-			'civicrm_wp_mail_sync_cpt_post_title',
-			$title
-		);
+		/**
+		 * Filter the WordPress Post Title.
+		 *
+		 * @since 0.1
+		 *
+		 * @param str $title The existing title.
+		 * @return str $title The modified title.
+		 */
+		$post['post_title'] = apply_filters( 'civicrm_wp_mail_sync_cpt_post_title', $title );
 
 		// Insert the post into the database.
 		$post_id = wp_insert_post( $post );
@@ -292,9 +326,9 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	public function get_posts() {
 
 		// Get them.
-		$posts = get_posts( array(
+		$posts = get_posts( [
 			'post_type' => $this->cpt_name,
-		) );
+		] );
 
 		// --<
 		return $posts;
@@ -325,7 +359,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Parses query.
+	 * Parse the query.
 	 *
 	 * @since 0.1
 	 *
@@ -362,7 +396,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		}
 
 		// Init post ID array.
-		$post_ids = array();
+		$post_ids = [];
 
 		// If we're logged in.
 		if ( is_user_logged_in() ) {
@@ -371,13 +405,13 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			$current_user = wp_get_current_user();
 
 			// Get Civi contact ID.
-			$contact_id = $this->civi->get_contact_id_by_user_id( $current_user->ID );
+			$contact_id = $this->civicrm->get_contact_id_by_user_id( $current_user->ID );
 
 			// If we get one.
 			if ( $contact_id !== false ) {
 
 				// Get mailings for this user.
-				$mailings = $this->civi->get_mailings_by_contact_id( $contact_id );
+				$mailings = $this->civicrm->get_mailings_by_contact_id( $contact_id );
 
 				// Did we get any?
 				if ( isset( $mailings['values'] ) AND count( $mailings['values'] ) > 0 ) {
@@ -397,8 +431,8 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		}
 
 		// If $post_ids is empty, pass the largest bigint(20) value to ensure no posts are matched
-		// This is a temporary measure until we have proper checks for the type of email
-		$post_ids = empty( $post_ids ) ? array( '18446744073709551615' ) : $post_ids;
+		// This is a temporary measure until we have proper checks for the type of email.
+		$post_ids = empty( $post_ids ) ? [ '18446744073709551615' ] : $post_ids;
 
 		// Restrict to those posts.
 		$query->set( 'post__in', $post_ids );
@@ -437,7 +471,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		$mailing_id = $this->admin->get_mailing_id_by_post_id( $post->ID );
 
 		// Get rendered content
-		$content = $this->civi->message_render( $mailing_id );
+		$content = $this->civicrm->message_render( $mailing_id );
 
 		// --<
 		return $content;

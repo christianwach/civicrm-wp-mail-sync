@@ -31,7 +31,9 @@ if ( ! defined( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH' ) ) {
 }
 
 // Set our debug flag here.
-define( 'CIVICRM_WP_MAIL_SYNC_DEBUG', false );
+if ( ! defined( 'CIVICRM_WP_MAIL_SYNC_DEBUG' ) ) {
+	define( 'CIVICRM_WP_MAIL_SYNC_DEBUG', false );
+}
 
 
 
@@ -49,7 +51,7 @@ class CiviCRM_WP_Mail_Sync {
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var object $civicrm The Admin Utilities object.
+	 * @var object $admin The Admin Utilities object.
 	 */
 	public $admin;
 
@@ -60,7 +62,7 @@ class CiviCRM_WP_Mail_Sync {
 	 * @access public
 	 * @var object $civicrm The CiviCRM Utilities object.
 	 */
-	public $civi;
+	public $civicrm;
 
 	/**
 	 * WordPress Utilities object.
@@ -80,8 +82,8 @@ class CiviCRM_WP_Mail_Sync {
 	 */
 	public function __construct() {
 
-		// Init loading process
-		$this->initialise();
+		// Initialise on "plugins_loaded".
+		add_action( 'plugins_loaded', [ $this, 'initialise' ] );
 
 	}
 
@@ -94,34 +96,76 @@ class CiviCRM_WP_Mail_Sync {
 	 */
 	public function initialise() {
 
-		// Use translation files.
-		add_action( 'plugins_loaded', array( $this, 'enable_translation' ) );
+		// Only do this once.
+		static $done;
+		if ( isset( $done ) AND $done === true ) {
+			return;
+		}
+
+		// Bail if CiviCRM isn't found.
+		if ( ! function_exists( 'civi_wp' ) ) {
+			$done = true;
+			return;
+		}
+
+		// Load translation.
+		$this->enable_translation();
+
+		// Include files.
+		$this->include_files();
+
+		// Set up objects and references.
+		$this->setup_objects();
+
+		/**
+		 * Broadcast that this plugin is now initialised.
+		 *
+		 * @since 0.1
+		 */
+		do_action( 'civicrm_wp_mail_sync_initialised' );
+
+		// We're done.
+		$done = true;
+
+	}
+
+
+
+	/**
+	 * Include files.
+	 *
+	 * @since 0.2
+	 */
+	public function include_files() {
 
 		// Load our Admin utility class.
-		require( CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-admin.php' );
-
-		// Instantiate.
-		$this->admin = new CiviCRM_WP_Mail_Sync_Admin();
+		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-admin.php';
 
 		// Load our CiviCRM utility functions class.
-		require( CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-civi.php' );
-
-		// Initialise.
-		$this->civi = new CiviCRM_WP_Mail_Sync_CiviCRM;
+		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-civi.php';
 
 		// Load our WordPress utility functions class.
-		require( CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-wp.php' );
+		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'civicrm-wp-mail-sync-wp.php';
 
-		// Initialise.
-		$this->wp = new CiviCRM_WP_Mail_Sync_WordPress;
+	}
 
-		// Store references.
-		$this->admin->set_references( $this->wp, $this->civi );
-		$this->civi->set_references( $this->admin, $this->wp );
-		$this->wp->set_references( $this->admin, $this->civi );
 
-		// Fire action.
-		do_action( 'civicrm_wp_mail_sync_initialised' );
+
+	/**
+	 * Set up this plugin's objects.
+	 *
+	 * @since 0.2
+	 */
+	public function setup_objects() {
+
+		// Instantiate our Admin utility class.
+		$this->admin = new CiviCRM_WP_Mail_Sync_Admin( $this );
+
+		// Instantiate our CiviCRM utility class.
+		$this->civicrm = new CiviCRM_WP_Mail_Sync_CiviCRM( $this );
+
+		// Instantiate our WordPress utility class.
+		$this->wp = new CiviCRM_WP_Mail_Sync_WordPress( $this );
 
 	}
 

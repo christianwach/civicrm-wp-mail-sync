@@ -36,11 +36,20 @@ $value = $page->run($mailing->id, NULL, FALSE);
 class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	/**
+	 * Plugin object.
+	 *
+	 * @since 0.2
+	 * @access public
+	 * @var object $plugin The plugin object.
+	 */
+	public $plugin;
+
+	/**
 	 * Admin Utilities object.
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var object $civicrm The Admin Utilities object.
+	 * @var object $admin The Admin Utilities object.
 	 */
 	public $admin;
 
@@ -69,125 +78,64 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 *
 	 * @since 0.1
 	 */
-	public function __construct() {
+	public function __construct( $plugin ) {
 
-		// Add actions for plugin init on CiviCRM init.
-		add_action( 'civicrm_instance_loaded', array( $this, 'register_hooks' ) );
+		// Store reference to plugin.
+		$this->plugin = $plugin;
+
+		// Initialise on "civicrm_wp_mail_sync_initialised".
+		add_action( 'civicrm_wp_mail_sync_initialised', [ $this, 'initialise' ] );
 
 	}
 
 
 
 	/**
-	 * Set references to other objects.
+	 * Initialise.
 	 *
-	 * @since 0.1
-	 *
-	 * @param object $admin_object Reference to this plugin's Admin object.
-	 * @param object $wp_object Reference to this plugin's WordPress object.
+	 * @since 0.2
 	 */
-	public function set_references( $admin_object, $wp_object ) {
+	public function initialise() {
 
-		// Store reference to Admin object.
-		$this->admin = $admin_object;
+		// Store references to other objects.
+		$this->admin = $this->plugin->admin;
+		$this->wp = $this->plugin->wp;
 
-		// Store reference to WordPress object.
-		$this->wp = $wp_object;
+		// Register hooks.
+		$this->register_hooks();
+
+		/**
+		 * Broadcast that this class is now loaded.
+		 *
+		 * @since 0.2
+		 */
+		do_action( 'civicrm_wp_mail_sync_civicrm_initialised' );
 
 	}
 
 
 
 	/**
-	 * Register hooks on plugin init.
+	 * Register hooks.
 	 *
 	 * @since 0.1
 	 */
 	public function register_hooks() {
 
-		// Store Civi version.
-		$this->civicrm_version = $this->get_major_version();
+		// Intercept Mailing before save.
+		//add_action( 'civicrm_pre', [ $this, 'template_before_save' ], 10, 4 );
 
-		// Test for CiviCRM prior to 4.6.
-		if ( version_compare( $this->civicrm_version, '4.6', '<' ) ) {
-
-			// Intercept Mailing before save.
-			add_action( 'civicrm_pre', array( $this, 'template_before_save_legacy' ), 10, 4 );
-
-			// Intercept Mailing after save.
-			add_action( 'civicrm_post', array( $this, 'template_after_save_legacy' ), 10, 4 );
-
-		} else {
-
-			// Intercept Mailing before save.
-			//add_action( 'civicrm_pre', array( $this, 'template_before_save' ), 10, 4 );
-
-			// Intercept Mailing after save.
-			add_action( 'civicrm_post', array( $this, 'template_after_save' ), 10, 4 );
-
-		}
+		// Intercept Mailing after save.
+		add_action( 'civicrm_post', [ $this, 'template_after_save' ], 10, 4 );
 
 		// Intercept Mailing email before send.
-		//add_action( 'civicrm_alterMailParams', array( $this, 'message_before_send' ), 10, 2 );
+		//add_action( 'civicrm_alterMailParams', [ $this, 'message_before_send' ], 10, 2 );
 
 		// Intercept token values.
-		//add_filter( 'civicrm_tokenValues', array( $this, 'token_values' ), 10, 4 );
+		//add_filter( 'civicrm_tokenValues', [ $this, 'token_values' ], 10, 4 );
 
 		// Intercept tokens.
-		//add_filter( 'civicrm_tokens', array( $this, 'tokens' ), 10, 1 );
-
-	}
-
-
-
-	/**
-	 * Get CiviCRM version.
-	 *
-	 * We need to check for the CiviCRM major version, because the handling of
-	 * mailing templates has changed greatly between 4.5.n and 4.6.
-	 *
-	 * @since 0.1
-	 *
-	 * @return bool|str $local_major_version The current CiviCRM version.
-	 */
-	public function get_major_version() {
-
-		// Init CiviCRM or die.
-		if ( ! $this->is_active() ) {
-			return false;
-		}
-
-		// Init return.
-		$local_major_version = false;
-
-		// Access global.
-		global $civicrm_root;
-
-		// Construct path to version file.
-		$version_file = $civicrm_root . DIRECTORY_SEPARATOR . 'civicrm-version.php';
-
-		// Include it, if it exists.
-		if ( file_exists( $version_file ) ) {
-			require_once $version_file;
-		}
-
-		// If we've successfully included it, then the function will exist.
-		if ( function_exists( 'civicrmVersion' ) ) {
-
-			// Get CiviCRM info.
-			$info = civicrmVersion();
-
-			// Get version.
-			$local_version = trim( $info['version'] );
-
-			// Get major version.
-			list( $a, $b ) = explode( '.', $local_version );
-			$local_major_version = "$a.$b";
-
-		}
-
-		// --<
-    	return $local_major_version;
+		//add_filter( 'civicrm_tokens', [ $this, 'tokens' ], 10, 1 );
 
 	}
 
@@ -253,14 +201,14 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		/*
-		error_log( print_r( array(
+		error_log( print_r( [
 			'method' => 'template_before_save',
 			'op' => $op,
 			'objectName' => $objectName,
 			'objectId' => $objectId,
 			'objectRef' => $objectRef,
 			//'debug_backtrace' => debug_backtrace( false ),
-		), true ), 3, WP_CONTENT_DIR . '/my-debug.log' );
+		], true ), 3, WP_CONTENT_DIR . '/my-debug.log' );
 		*/
 
 	}
@@ -311,14 +259,14 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		/*
-		error_log( print_r( array(
+		error_log( print_r( [
 			'method' => 'template_after_save',
 			'op' => $op,
 			'objectName' => $objectName,
 			'objectId' => $objectId,
 			'objectRef' => $objectRef,
 			//'debug_backtrace' => debug_backtrace( false ),
-		), true ), 3, WP_CONTENT_DIR . '/my-debug.log' );
+		], true ), 3, WP_CONTENT_DIR . '/my-debug.log' );
 		*/
 
 	}
@@ -362,12 +310,12 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		/*
-		print_r( array(
+		print_r( [
 			'op' => $op,
 			'objectName' => $objectName,
 			'objectId' => $objectId,
 			'objectRef' => $objectRef,
-		)); //die();
+		]); //die();
 		*/
 
 		// Create a post from this data.
@@ -479,12 +427,12 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		/*
-		print_r( array(
+		print_r( [
 			'op' => $op,
 			'objectName' => $objectName,
 			'objectId' => $objectId,
 			'objectRef' => $objectRef,
-		)); //die();
+		]); //die();
 		*/
 
 	}
@@ -510,10 +458,10 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		return;
 
 		/*
-		print_r( array(
+		print_r( [
 			'params' => $params,
 			'context' => $context,
-		)); //die();
+		]); //die();
 		*/
 
 	}
@@ -530,18 +478,18 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @param int $job_id The job ID.
 	 * @param array $tokens The tokens whose values need replacing.
 	 */
-	public function token_values( &$values, $contact_ids, $job_id = null, $tokens = array() ) {
+	public function token_values( &$values, $contact_ids, $job_id = null, $tokens = [] ) {
 
 		// Disabled.
 		return;
 
 		/*
-		print_r( array(
+		print_r( [
 			'values' => $values,
 			'contact_ids' => $contact_ids,
 			'job_id' => $job_id,
 			'tokens' => $tokens,
-		)); die();
+		]); die();
 		*/
 
 		// Target our token
@@ -571,9 +519,9 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		// Unset view url token?
 
 		/*
-		print_r( array(
+		print_r( [
 			'tokens' => $tokens,
-		)); die();
+		]); die();
 		*/
 
 	}
@@ -599,12 +547,12 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		// Construct array.
-		$params = array(
+		$params = [
 			'version' => 3,
-			'options' => array(
+			'options' => [
 				'limit' => '0',
-			),
-		);
+			],
+		];
 
 		// Call API.
 		$mailings = civicrm_api( 'mailing', 'get', $params );
@@ -632,18 +580,18 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		// Construct array.
-		$params = array(
+		$params = [
 			'version' => 3,
 			'contact_id' => $contact_id,
 			/*
 			//'type' => 'Delivered',
-			'options' => array(
+			'options' => [
 				'Delivered' => 'Delivered',
 				'Bounced' => 'Bounced',
 				//'limit' => '100000',
-			),
+			],
 			*/
-		);
+		];
 
 		// Call API.
 		$mailings = civicrm_api( 'mailing_contact', 'get', $params );
@@ -671,13 +619,13 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		// Construct array.
-		$params = array(
+		$params = [
 			'version' => 3,
 			'id' => $mailing_id,
-			'options' => array(
+			'options' => [
 				'limit' => '0',
-			),
-		);
+			],
+		];
 
 		// Call API
 		$contacts = civicrm_api( 'mailing_recipients', 'get', $params );
@@ -709,11 +657,11 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$mailings = $this->get_mailings_by_contact_id( $contact_id );
 
 		/*
-		print_r( array(
+		print_r( [
 			'mailing_id' => $mailing_id,
 			'contact_id' => $contact_id,
 			'mailings' => $mailings,
-		) );
+		] );
 		*/
 
 		// Did we get any?
@@ -789,7 +737,15 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			// Say what?
 			$text = __( '<p>Sorry, this email has not been found.</p>', 'civicrm-wp-mail-sync' );
 
-			// Allow overrides.
+			/**
+			 * Filter the "not found" message.
+			 *
+			 * @since 0.1
+			 *
+			 * @param str $text The existing message text.
+			 * @param int $mailing_id The numeric ID of the Mailing.
+			 * @return str $text The modified message text.
+			 */
 			$text = apply_filters( 'civicrm_wp_mail_sync_email_render_not_found', $text, $mailing_id );
 
 			// --<
@@ -803,7 +759,15 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			// Say what?
 			$text = __( '<p>Sorry, but you are not allowed to view this email.</p>', 'civicrm-wp-mail-sync' );
 
-			// Allow overrides.
+			/**
+			 * Filter the "not allowed" message.
+			 *
+			 * @since 0.1
+			 *
+			 * @param str $text The existing message text.
+			 * @param int $mailing_id The numeric ID of the Mailing.
+			 * @return str $text The modified message text.
+			 */
 			$text = apply_filters( 'civicrm_wp_mail_sync_email_render_not_allowed', $text, $mailing_id );
 
 			// --<
@@ -826,7 +790,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 		// Get details of contact with token value including Custom Field Token Values. See CRM-3734
 		$returnProperties = $mailing->getReturnProperties();
-		$params = array( 'contact_id' => $contact_id );
+		$params = [ 'contact_id' => $contact_id ];
 
 		// Get details.
 		$details = CRM_Utils_Token::getTokenDetails(
@@ -961,7 +925,15 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		// Define text.
 		$plain_text = __( 'Unable to view this email? View it here:', 'civicrm-wp-mail-sync' );
 
-		// Allow overrides of the text intro.
+		/**
+		 * Filter the "View in Browser" link in a Plain Text message.
+		 *
+		 * @since 0.1
+		 *
+		 * @param str $plain_text The existing message text.
+		 * @param int $post_id The numeric ID of the WordPress Post.
+		 * @return str $plain_text The modified message text.
+		 */
 		return apply_filters( 'civicrm_wp_mail_sync_mail_plain_url', $plain_text, $post_id );
 
 	}
@@ -985,7 +957,15 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			$permalink
 		);
 
-		// Allow overrides.
+		/**
+		 * Filter the "View in Browser" link in an HTML message.
+		 *
+		 * @since 0.1
+		 *
+		 * @param str $text The existing message text.
+		 * @param int $mailing_id The numeric ID of the Mailing.
+		 * @return str $text The modified message text.
+		 */
 		return apply_filters( 'civicrm_wp_mail_sync_mail_html_url', $html, $permalink, $post_id );
 
 	}

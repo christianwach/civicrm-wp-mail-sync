@@ -23,13 +23,22 @@ defined( 'ABSPATH' ) || exit;
 class CiviCRM_WP_Mail_Sync_Admin {
 
 	/**
+	 * Plugin object.
+	 *
+	 * @since 0.2
+	 * @access public
+	 * @var object $plugin The plugin object.
+	 */
+	public $plugin;
+
+	/**
 	 * CiviCRM Utilities object.
 	 *
 	 * @since 0.1
 	 * @access public
 	 * @var object $civicrm The CiviCRM Utilities object.
 	 */
-	public $civi;
+	public $civicrm;
 
 	/**
 	 * WordPress Utilities object.
@@ -41,22 +50,22 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	public $wp;
 
 	/**
-	 * Admin pages reference.
-	 *
-	 * @since 0.1
-	 * @access public
-	 * @var str $settings_page The Admin pages reference.
-	 */
-	public $settings_page;
-
-	/**
 	 * Settings.
 	 *
 	 * @since 0.1
 	 * @access public
 	 * @var array $settings The plugin settings.
 	 */
-	public $settings = array();
+	public $settings = [];
+
+	/**
+	 * Settings page reference.
+	 *
+	 * @since 0.1
+	 * @access public
+	 * @var str $settings_page The settings page reference.
+	 */
+	public $settings_page;
 
 
 
@@ -65,30 +74,59 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	 *
 	 * @since 0.1
 	 */
-	public function __construct() {
+	public function __construct( $plugin ) {
 
-		// Init.
-		$this->initialise();
+		// Store reference to plugin.
+		$this->plugin = $plugin;
+
+		// Initialise on "civicrm_wp_mail_sync_initialised".
+		add_action( 'civicrm_wp_mail_sync_initialised', [ $this, 'initialise' ] );
 
 	}
 
 
 
 	/**
-	 * Set references to other objects.
+	 * Initialise.
 	 *
 	 * @since 0.1
-	 *
-	 * @param object $wp_object Reference to this plugin's WP object.
-	 * @param object $civi_object Reference to this plugin's CIviCRM object.
 	 */
-	public function set_references( $wp_object, $civi_object ) {
+	public function initialise() {
 
-		// Store reference to WordPress reference.
-		$this->wp = $wp_object;
+		// Store references to other objects.
+		$this->civicrm = $this->plugin->civicrm;
+		$this->wp = $this->plugin->wp;
 
-		// Store reference to CiviCRM object.
-		$this->civi = $civi_object;
+		// Load settings array.
+		$this->settings = civiwpmailsync_site_option_get( 'civicrm_wp_mail_sync_settings', $this->settings );
+
+		// Register hooks.
+		$this->register_hooks();
+
+		/**
+		 * Broadcast that this class is now loaded.
+		 *
+		 * @since 0.2
+		 */
+		do_action( 'civicrm_wp_mail_sync_admin_initialised' );
+
+	}
+
+
+
+	/**
+	 * Register hooks.
+	 *
+	 * @since 0.2
+	 */
+	public function register_hooks() {
+
+		// Add admin page to menu.
+		if ( is_multisite() ) {
+			add_action( 'network_admin_menu', [ $this, 'admin_menu' ], 30 );
+		} else {
+			add_action( 'admin_menu', [ $this, 'admin_menu' ] );
+		}
 
 	}
 
@@ -132,38 +170,6 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 
-	/**
-	 * Initialise.
-	 *
-	 * @since 0.1
-	 */
-	public function initialise() {
-
-		// Load settings array.
-		$this->settings = civiwpmailsync_site_option_get( 'civicrm_wp_mail_sync_settings', $this->settings );
-
-		// Is this the back end?
-		if ( is_admin() ) {
-
-			// Multisite?
-			if ( is_multisite() ) {
-
-				// Add admin page to Network menu.
-				add_action( 'network_admin_menu', array( $this, 'admin_menu' ), 30 );
-
-			} else {
-
-				// Add admin page to menu.
-				add_action( 'admin_menu', array( $this, 'admin_menu' ) );
-
-			}
-
-		}
-
-	}
-
-
-
 	//##########################################################################
 
 
@@ -176,13 +182,13 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	public function admin_menu() {
 
 		// We must be network admin in multisite.
-		if ( is_multisite() AND !is_super_admin() ) {
-			return false;
+		if ( is_multisite() AND ! is_super_admin() ) {
+			return;
 		}
 
 		// Check user permissions.
-		if ( !current_user_can('manage_options') ) {
-			return false;
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
 		}
 
 		// Try and update settings.
@@ -191,42 +197,48 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		// Multisite?
 		if ( is_multisite() ) {
 
-			// Add the admin page to the Network Settings menu.
-			$page = add_submenu_page(
+			// Add the admin page to the "Network Settings" menu.
+			$this->settings_page = add_submenu_page(
 				'settings.php',
 				__( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ),
 				__( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ),
 				'manage_options',
 				'civiwpmailsync_admin_page',
-				array( $this, 'admin_form' )
+				[ $this, 'admin_form' ]
 			);
 
 		} else {
 
-			// Add the admin page to the Settings menu.
-			$page = add_options_page(
+			// Add the admin page to the "Settings" menu.
+			$this->settings_page = add_options_page(
 				__( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ),
 				__( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ),
 				'manage_options',
 				'civiwpmailsync_admin_page',
-				array( $this, 'admin_form' )
+				[ $this, 'admin_form' ]
 			);
 
 		}
 
-		// Add styles only on our admin page.
-		//add_action( 'admin_print_styles-' . $page, array( $this, 'add_admin_styles' ) );
+		/*
+		 * Add styles and scripts only on our settings page.
+		 *
+		 * @see wp-admin/admin-header.php
+		 */
+		//add_action( 'admin_print_styles-' . $this->settings_page, [ $this, 'admin_styles' ] );
+		//add_action( 'admin_print_scripts-' . $this->settings_page, [ $this, 'admin_scripts' ] );
+		//add_action( 'admin_head-' . $this->settings_page, [ $this, 'admin_head' ], 50 );
 
 	}
 
 
 
 	/**
-	 * Enqueue any styles and scripts needed by our admin page.
+	 * Enqueue any styles needed by our admin page.
 	 *
 	 * @since 0.1
 	 */
-	public function add_admin_styles() {
+	public function admin_styles() {
 
 		// Add admin CSS.
 		wp_enqueue_style(
@@ -377,7 +389,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 				<th scope="row">' . __( 'Sync to WordPress', 'civicrm-wp-mail-sync' ) . '</th>
 				<td>
 					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_sync" id="civiwpmailsync_sync" value="1" />
-					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_sync">' . __( 'Check this to sync existing mailings to WordPress.', 'civiwpmailsync' ) . '</label>
+					<label class="civiwpmailsync_settings_label" for="civiwpmailsync_sync">' . __( 'Check this to sync existing mailings to WordPress.', 'civicrm-wp-mail-sync' ) . '</label>
 				</td>
 			</tr>
 
@@ -410,7 +422,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 				<th scope="row">' . __( 'Debug', 'civicrm-wp-mail-sync' ) . '</th>
 				<td>
 					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_debug" id="civiwpmailsync_debug" value="1" />
-					<label class="civi_wp_member_sync_settings_label" for="civiwpmailsync_debug">' . __( 'Check this to trigger do_debug().', 'civiwpmailsync' ) . '</label>
+					<label class="civiwpmailsync_settings_label" for="civiwpmailsync_debug">' . __( 'Check this to trigger do_debug().', 'civicrm-wp-mail-sync' ) . '</label>
 				</td>
 			</tr>
 
@@ -456,7 +468,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		$this->wp->delete_posts();
 
 		// Clear linkage.
-		$this->setting_set( 'linkage', array() );
+		$this->setting_set( 'linkage', [] );
 		$this->settings_save();
 
 	}
@@ -471,7 +483,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	public function build_sync() {
 
 		// Get mailings.
-		$mailings = $this->civi->get_mailings();
+		$mailings = $this->civicrm->get_mailings();
 
 		// Did we get any?
 		if (
@@ -506,7 +518,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	 */
 	public function do_debug() {
 
-		//print_r( array( 'linkage' => $this->setting_get( 'linkage' ) ) ); die();
+		//print_r( [ 'linkage' => $this->setting_get( 'linkage' ) ] ); die();
 
 		// Reset plugin.
 		//$this->clear_sync();
@@ -522,24 +534,24 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		$current_user = wp_get_current_user();
 
 		// Get Civi contact ID.
-		$contact_id = $this->civi->get_contact_id_by_user_id( $current_user->ID );
+		$contact_id = $this->civicrm->get_contact_id_by_user_id( $current_user->ID );
 
 		// Get mailings.
-		$mailings = $this->civi->get_mailings_by_contact_id( $contact_id );
+		$mailings = $this->civicrm->get_mailings_by_contact_id( $contact_id );
 		print_r( $mailings ); die();
 		*/
 
 		// Init $recipients.
-		$recipients = array();
+		$recipients = [];
 
 		// Get mailings.
-		$mailings = $this->civi->get_mailings();
+		$mailings = $this->civicrm->get_mailings();
 
 		// Loop through them.
 		foreach( $mailings['values'] AS $mailing_id => $mailing ) {
 
 			// Get contacts.
-			$contacts = $this->civi->get_contacts_by_mailing_id( $mailing_id );
+			$contacts = $this->civicrm->get_contacts_by_mailing_id( $mailing_id );
 
 			// Loop through them.
 			foreach( $contacts['values'] AS $mailing_id => $mailing_contact ) {
@@ -560,7 +572,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		}
 
 		// Init mailings per contact.
-		$mailings_by_contact = array();
+		$mailings_by_contact = [];
 
 		// Make unique.
 		$recipients = array_unique( $recipients );
@@ -569,16 +581,16 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		foreach( $recipients AS $contact_id ) {
 
 			// Get mailings.
-			$mailings_by_contact[$contact_id] = $this->civi->get_mailings_by_contact_id( $contact_id );
+			$mailings_by_contact[$contact_id] = $this->civicrm->get_mailings_by_contact_id( $contact_id );
 
 		}
 
 		/*
-		print_r( array(
+		print_r( [
 			//'mailings' => $mailings,
 			'mailings_by_contact' => $mailings_by_contact,
 			'recipients' => $recipients,
-		)); die();
+		]); die();
 		*/
 
 	}
@@ -599,10 +611,10 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	public function settings_get_defaults() {
 
 		// Init return.
-		$settings = array();
+		$settings = [];
 
 		// Init linkage array.
-		$settings['linkage'] = array();
+		$settings['linkage'] = [];
 
 		// --<
 		return $settings;
