@@ -4,7 +4,7 @@ Plugin Name: CiviCRM WordPress Mail Sync
 Plugin URI: https://github.com/christianwach/civicrm-wp-mail-sync
 Description: Create WordPress Posts from CiviCRM Mailings to allow your Users to view their emails in WordPress. <strong>NOTE: This plugin is not for use in production.</strong>
 Author: Christian Wach
-Version: 0.2
+Version: 0.2.1
 Author URI: http://haystack.co.uk
 Text Domain: civicrm-wp-mail-sync
 Domain Path: /languages
@@ -15,7 +15,7 @@ Depends: CiviCRM
 
 
 // Set our version here.
-define( 'CIVICRM_WP_MAIL_SYNC_VERSION', '0.2' );
+define( 'CIVICRM_WP_MAIL_SYNC_VERSION', '0.2.1' );
 
 // Store reference to this file.
 define( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_FILE', __FILE__ );
