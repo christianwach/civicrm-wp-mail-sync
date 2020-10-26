@@ -268,7 +268,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		// Maybe show message.
 		if ( isset( $_GET['updated'] ) AND isset( $_POST['civiwpmailsync_sync'] ) ) {
 			$messages = '<div id="message" class="updated"><p>' . sprintf(
-				__( 'CiviMail messages synced to WordPress posts. <a href="%s">View message archive</a>.', 'civicrm-wp-mail-sync' ),
+				__( 'CiviCRM Mailings synced to WordPress Posts. <a href="%s">View Mailing Archive</a>.', 'civicrm-wp-mail-sync' ),
 				get_post_type_archive_link( $this->wp->get_cpt_name() )
 			) . '</p></div>';
 		}
@@ -348,34 +348,30 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 	/**
-	 * Sync CiviCRM Mailings to WordPress.
+	 * Sync CiviCRM Mailings to WordPress Posts.
 	 *
 	 * @since 0.1
 	 */
 	public function mailings_sync_to_wp() {
 
-		// Get mailings.
+		// Get CiviCRM Mailings.
 		$mailings = $this->civicrm->mailings_get_all();
 
-		// Did we get any?
-		if (
-			$mailings['is_error'] == 0 AND
-			isset( $mailings['values'] ) AND
-			count( $mailings['values'] ) > 0
-		) {
+		// Bail if there are none.
+		if ( empty( $mailings ) ) {
+			return;
+		}
 
-			// Loop through them.
-			foreach( $mailings['values'] AS $mailing_id => $mailing ) {
+		// Create WordPress Posts for all of them.
+		foreach( $mailings AS $mailing_id => $mailing ) {
 
-				// Does it have a post?
-				if ( $this->get_post_id_by_mailing_id( $mailing_id ) ) {
-					continue;
-				}
-
-				// Create a post.
-				$post_id = $this->wp->create_post_from_mailing( $mailing_id, $mailing );
-
+			// Does it have a WordPress Post?
+			if ( $this->get_post_id_by_mailing_id( $mailing_id ) ) {
+				continue;
 			}
+
+			// Create a WordPress Post.
+			$post_id = $this->wp->create_post_from_mailing( $mailing_id, $mailing );
 
 		}
 
@@ -392,7 +388,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 	 */
 	public function mailings_delete_from_wp() {
 
-		// Reset posts.
+		// Reset WordPress Posts.
 		$this->wp->delete_posts();
 
 		// Clear linkage.
@@ -408,12 +404,12 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 	/**
-	 * Link a WordPress post to a CiviCRM mailing.
+	 * Link a WordPress Post to a CiviCRM Mailing.
 	 *
 	 * @since 0.1
 	 *
-	 * @param int $post_id The numerical ID of the WordPress post.
-	 * @param int $mailing_id The numerical ID of the CiviCRM mailing.
+	 * @param int $post_id The numeric ID of the WordPress Post.
+	 * @param int $mailing_id The numeric ID of the CiviCRM Mailing.
 	 */
 	public function link_post_and_mailing( $post_id, $mailing_id ) {
 
@@ -424,7 +420,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		// Get linkage array.
 		$linkage = $this->setting_get( 'linkage' );
 
-		// Add mailing ID to array keyed by post ID.
+		// Add CiviCRM Mailing ID to array keyed by WordPress Post ID.
 		$linkage[$post_id] = $mailing_id;
 
 		// Overwrite setting.
@@ -438,11 +434,11 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 	/**
-	 * Unlink a WordPress post from a CiviCRM mailing.
+	 * Unlink a WordPress Post from a CiviCRM Mailing.
 	 *
 	 * @since 0.1
 	 *
-	 * @param int $post_id The numerical ID of the WordPress post.
+	 * @param int $post_id The numeric ID of the WordPress Post.
 	 */
 	public function unlink_post_and_mailing( $post_id ) {
 
@@ -452,7 +448,7 @@ class CiviCRM_WP_Mail_Sync_Admin {
 		// Get linkage array.
 		$linkage = $this->setting_get( 'linkage' );
 
-		// Remove entry keyed by post ID.
+		// Remove entry keyed by WordPress Post ID.
 		unset( $linkage[$post_id] );
 
 		// Overwrite setting.
@@ -466,12 +462,12 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 	/**
-	 * Get a WordPress post ID from a CiviCRM mailing ID.
+	 * Get a WordPress Post ID from a CiviCRM Mailing ID.
 	 *
 	 * @since 0.1
 	 *
-	 * @param int $mailing_id The numerical ID of the CiviCRM mailing.
-	 * @return int $post_id The numerical ID of the WordPress post.
+	 * @param int $mailing_id The numeric ID of the CiviCRM Mailing.
+	 * @return int $post_id The numeric ID of the WordPress Post.
 	 */
 	public function get_post_id_by_mailing_id( $mailing_id ) {
 
@@ -501,12 +497,12 @@ class CiviCRM_WP_Mail_Sync_Admin {
 
 
 	/**
-	 * Get a CiviCRM mailing ID from a WordPress post ID.
+	 * Get a CiviCRM Mailing ID from a WordPress Post ID.
 	 *
 	 * @since 0.1
 	 *
-	 * @param int $post_id The numerical ID of the WordPress post.
-	 * @return int $mailing_id The numerical ID of the CiviCRM mailing.
+	 * @param int $post_id The numeric ID of the WordPress Post.
+	 * @return int $mailing_id The numeric ID of the CiviCRM Mailing.
 	 */
 	public function get_mailing_id_by_post_id( $post_id ) {
 

@@ -29,11 +29,11 @@
 		<table class="form-table">
 
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Sync Mailings to WordPress', 'civicrm-wp-mail-sync' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Sync CiviCRM Mailings to WordPress Posts', 'civicrm-wp-mail-sync' ); ?></th>
 				<td>
 					<input type="checkbox" class="settings-checkbox" name="civiwpmailsync_sync" id="civiwpmailsync_sync" value="1" />
 					<label class="civiwpmailsync_settings_label" for="civiwpmailsync_sync"><?php esc_html_e( 'Check this to sync existing CiviCRM Mailings to WordPress.', 'civicrm-wp-mail-sync' ); ?></label>
-					<p class="description"><?php esc_html_e( 'WARNING: this will probably only work when there are a small number of mailings.', 'civicrm-wp-mail-sync' ); ?></p>
+					<p class="description"><?php esc_html_e( 'WARNING: this will probably only work when there are a small number of CiviCRM Mailings.', 'civicrm-wp-mail-sync' ); ?></p>
 				</td>
 			</tr>
 

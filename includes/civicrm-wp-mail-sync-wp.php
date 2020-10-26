@@ -109,7 +109,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	 */
 	public function register_hooks() {
 
-		// Register Custom Post Type.
+		// Register our Custom Post Type.
 		add_action( 'init', [ $this, 'register_cpt' ] );
 
 		// Filter the query.
@@ -128,7 +128,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Register a custom post type.
+	 * Register our Custom Post Type.
 	 *
 	 * @since 0.1
 	 */
@@ -203,17 +203,17 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Create a post with the content of a Mailing.
+	 * Create a WordPress Post with the content of a CiviCRM Mailing.
 	 *
 	 * @since 0.1
 	 *
-	 * @param int $mailing_id The numerical Civi mailing ID.
-	 * @param array $mailing The Civi data for the mailing.
-	 * @return int $post_id The numeric ID of the new post.
+	 * @param int $mailing_id The numeric ID of the CiviCRM Mailing.
+	 * @param array $mailing The data for the CiviCRM Mailing.
+	 * @return int $post_id The numeric ID of the new WordPress Post.
 	 */
 	public function create_post_from_mailing( $mailing_id, $mailing ) {
 
-		// Check if we already have a post.
+		// Check if we already have a WordPress Post.
 		$existing_post_id = $this->admin->get_post_id_by_mailing_id( $mailing_id );
 
 		// Return it, if we have one.
@@ -239,10 +239,10 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			return;
 		}
 
-		// Create a WordPress post.
+		// Create a WordPress Post.
 		$post_id = $this->create_post( $mailing['subject'], $content );
 
-		// Store linkages between post amd mailing.
+		// Store linkages between WordPress Post and CiviCRM Mailing.
 		$this->admin->link_post_and_mailing( $post_id, $mailing_id );
 
 		// --<
@@ -253,17 +253,17 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Create a post of our custom post type.
+	 * Create a WordPress Post of our Custom Post Type.
 	 *
 	 * @since 0.1
 	 *
-	 * @param str $title The subject line of the mailing.
-	 * @param str $content The HTML content of the mailing.
-	 * @return int $post_id The numeric ID of the new post.
+	 * @param str $title The subject line of the CiviCRM Mailing.
+	 * @param str $content The HTML content of the CiviCRM Mailing.
+	 * @return int $post_id The numeric ID of the new WordPress Post.
 	 */
 	public function create_post( $title, $content ) {
 
-		// Define mailing post.
+		// Define WordPress Post data.
 		$post = [
 			'post_status' => 'publish',
 			'post_type' => $this->cpt_name,
@@ -286,7 +286,7 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 		 */
 		$post['post_title'] = apply_filters( 'civicrm_wp_mail_sync_cpt_post_title', $title );
 
-		// Insert the post into the database.
+		// Insert the WordPress Post into the database.
 		$post_id = wp_insert_post( $post );
 
 		// --<
@@ -297,11 +297,11 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Delete a post of our custom post type.
+	 * Delete a WordPress Post of our Custom Post Type.
 	 *
 	 * @since 0.1
 	 *
-	 * @param int $post_id The numerical ID of the WordPress post.
+	 * @param int $post_id The numerical ID of the WordPress Post.
 	 * @return bool $force_delete If true, trash will be bypassed.
 	 */
 	public function delete_post( $post_id, $force_delete ) {
@@ -314,11 +314,11 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Get all posts of our custom post type.
+	 * Get all WordPress Posts of our Custom Post Type.
 	 *
 	 * @since 0.1
 	 *
-	 * @return array $posts Array of post objects.
+	 * @return array $posts Array of WordPress Post objects.
 	 */
 	public function get_posts() {
 
@@ -335,13 +335,13 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Delete all posts of our custom post type.
+	 * Delete all WordPress Posts of our Custom Post Type.
 	 *
 	 * @since 0.1
 	 */
 	public function delete_posts() {
 
-		// Get the posts.
+		// Get the WordPress Posts.
 		$posts = $this->get_posts();
 
 		// Delete them one by one.
@@ -365,13 +365,6 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 	 */
 	public function parse_query( $query ) {
 
-		/*
-		// Bail if administrator.
-		if ( is_super_admin() ) {
-			return $query;
-		}
-		*/
-
 		// Bail if in WordPress admin.
 		if ( is_admin() ) {
 			return $query;
@@ -382,17 +375,17 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			return $query;
 		}
 
-		// Bail if not our post type.
+		// Bail if not our Custom Post Type.
 		if ( $query->get( 'post_type' ) != $this->cpt_name ) {
 			return $query;
 		}
 
-		// Bail if it's not our post type's archive page.
+		// Bail if it's not our Custom Post Type's Archive Page.
 		if ( ! is_post_type_archive( $this->cpt_name ) ) {
 			return $query;
 		}
 
-		// Init post ID array.
+		// Init Post ID array.
 		$post_ids = [];
 
 		// If we're logged in.
@@ -401,22 +394,22 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			// Get current user.
 			$current_user = wp_get_current_user();
 
-			// Get Civi contact ID.
+			// Get CiviCRM Contact ID.
 			$contact_id = $this->civicrm->contact_id_get_by_user_id( $current_user->ID );
 
 			// If we get one.
 			if ( $contact_id !== false ) {
 
-				// Get mailings for this user.
+				// Get CiviCRM Mailings for this user.
 				$mailings = $this->civicrm->mailings_get_by_contact_id( $contact_id );
 
 				// Did we get any?
-				if ( isset( $mailings['values'] ) AND count( $mailings['values'] ) > 0 ) {
+				if ( ! empty( $mailings ) ) {
 
-					// Get mailing IDs.
-					$mailing_ids = array_keys( $mailings['values'] );
+					// Get CiviCRM Mailing IDs.
+					$mailing_ids = array_keys( $mailings );
 
-					// Get the post IDs.
+					// Get the WordPress Post IDs.
 					foreach( $mailing_ids AS $mailing_id ) {
 						$post_ids[] = $this->admin->get_post_id_by_mailing_id( $mailing_id );
 					}
@@ -427,8 +420,11 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 		}
 
-		// If $post_ids is empty, pass the largest bigint(20) value to ensure no posts are matched
-		// This is a temporary measure until we have proper checks for the type of email.
+		/*
+		 * If $post_ids is empty, pass the largest bigint(20) value to ensure
+		 * no posts are matched. This is a temporary measure until we have
+		 * proper checks for the type of email.
+		 */
 		$post_ids = empty( $post_ids ) ? [ '18446744073709551615' ] : $post_ids;
 
 		// Restrict to those posts.
@@ -442,16 +438,16 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Parses post content.
+	 * Parse the content of a WordPress Post.
 	 *
 	 * @since 0.1
 	 *
-	 * @param str $content The content of the post.
-	 * @return str $content The modified content.
+	 * @param str $content The existing content of the WordPress Post.
+	 * @return str $content The modified content of the WordPress Post.
 	 */
 	public function parse_content( $content ) {
 
-		// Reference our post.
+		// Reference the Post object.
 		global $post;
 
 		// Sanity check.
@@ -459,12 +455,12 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 			return $content;
 		}
 
-		// Only parse our post type.
+		// Only parse our Custom Post Type.
 		if ( $post->post_type != $this->cpt_name ) {
 			return $content;
 		}
 
-		// Get mailing for this post.
+		// Get CiviCRM Mailing for this WordPress Post.
 		$mailing_id = $this->admin->get_mailing_id_by_post_id( $post->ID );
 
 		// Get rendered content.
@@ -478,11 +474,11 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Get the name of the custom post type.
+	 * Get the name of the Custom Post Type.
 	 *
 	 * @since 0.1
 	 *
-	 * @return str $cpt_name The name of the custom post type.
+	 * @return str $cpt_name The name of the Custom Post Type.
 	 */
 	public function get_cpt_name() {
 
@@ -494,11 +490,11 @@ class CiviCRM_WP_Mail_Sync_WordPress {
 
 
 	/**
-	 * Check if we're viewing the mailing archive page.
+	 * Check if we're viewing the Mailing Archive Page.
 	 *
 	 * @since 0.1
 	 *
-	 * @return bool True if archive page, false otherwise.
+	 * @return bool True if viewing the Mailing Archive Page, false otherwise.
 	 */
 	public function is_mailing_archive() {
 
