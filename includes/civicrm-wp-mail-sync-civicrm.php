@@ -242,7 +242,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			return;
 		}
 
-		///*
+		/*
 		$e = new \Exception;
 		$trace = $e->getTraceAsString();
 		error_log( print_r( [
@@ -253,7 +253,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			'objectRef' => $objectRef,
 			//'backtrace' => $trace,
 		], true ) );
-		//*/
+		*/
 
 	}
 
