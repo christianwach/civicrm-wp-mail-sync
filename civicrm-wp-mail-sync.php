@@ -31,7 +31,8 @@
  * GNU General Public License for more details.
  */
 
-
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 
 // Set our version here.
 define( 'CIVICRM_WP_MAIL_SYNC_VERSION', '0.2.1' );
@@ -48,8 +49,6 @@ if ( ! defined( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_URL' ) ) {
 if ( ! defined( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH' ) ) {
 	define( 'CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH', plugin_dir_path( CIVICRM_WP_MAIL_SYNC_PLUGIN_FILE ) );
 }
-
-
 
 /**
  * CiviCRM WordPress Mail Sync Plugin Class.
@@ -87,8 +86,6 @@ class CiviCRM_WP_Mail_Sync {
 	 */
 	public $wp;
 
-
-
 	/**
 	 * Constructor.
 	 *
@@ -100,8 +97,6 @@ class CiviCRM_WP_Mail_Sync {
 		add_action( 'plugins_loaded', [ $this, 'initialise' ] );
 
 	}
-
-
 
 	/**
 	 * Do stuff on plugin init.
@@ -143,8 +138,6 @@ class CiviCRM_WP_Mail_Sync {
 
 	}
 
-
-
 	/**
 	 * Include files.
 	 *
@@ -163,8 +156,6 @@ class CiviCRM_WP_Mail_Sync {
 
 	}
 
-
-
 	/**
 	 * Set up this plugin's objects.
 	 *
@@ -182,8 +173,6 @@ class CiviCRM_WP_Mail_Sync {
 		$this->wp = new CiviCRM_WP_Mail_Sync_WordPress( $this );
 
 	}
-
-
 
 	/**
 	 * Do stuff on plugin activation.
@@ -206,8 +195,6 @@ class CiviCRM_WP_Mail_Sync {
 
 	}
 
-
-
 	/**
 	 * Do stuff on plugin deactivation.
 	 *
@@ -226,8 +213,6 @@ class CiviCRM_WP_Mail_Sync {
 
 	}
 
-
-
 	/**
 	 * Enable translation.
 	 *
@@ -240,6 +225,7 @@ class CiviCRM_WP_Mail_Sync {
 	public function enable_translation() {
 
 		// Load translations.
+		// phpcs:ignore WordPress.WP.DeprecatedParameters.Load_plugin_textdomainParam2Found
 		load_plugin_textdomain(
 			'civicrm-wp-mail-sync', // Unique name.
 			false, // Deprecated argument.
@@ -248,35 +234,58 @@ class CiviCRM_WP_Mail_Sync {
 
 	}
 
+	/**
+	 * Write to the error log.
+	 *
+	 * @since 0.2.1
+	 *
+	 * @param array $data The data to write to the log file.
+	 */
+	public function log_error( $data = [] ) {
 
+		// Skip if not debugging.
+		if ( WP_DEBUG === false ) {
+			return;
+		}
 
-} // Class ends.
+		// Skip if empty.
+		if ( empty( $data ) ) {
+			return;
+		}
 
+		// Format data.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+		$error = print_r( $data, true );
 
+		// Write to log file.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( $error );
+
+	}
+
+}
 
 /**
  * Utility to get a reference to this plugin.
  *
  * @since 0.2
  *
- * @return CiviCRM_ACF_Integration $civicrm_wp_mail_sync The plugin reference.
+ * @return CiviCRM_WP_Mail_Sync $civicrm_wp_mail_sync The plugin reference.
  */
 function civicrm_wp_mail_sync() {
 
 	// Store instance in static variable.
-	static $civicrm_wp_mail_sync = false;
+	static $plugin = false;
 
 	// Maybe return instance.
-	if ( false === $civicrm_wp_mail_sync ) {
-		$civicrm_wp_mail_sync = new CiviCRM_WP_Mail_Sync();
+	if ( false === $plugin ) {
+		$plugin = new CiviCRM_WP_Mail_Sync();
 	}
 
 	// --<
-	return $civicrm_wp_mail_sync;
+	return $plugin;
 
 }
-
-
 
 // Initialise plugin now.
 civicrm_wp_mail_sync();
@@ -287,8 +296,7 @@ register_activation_hook( __FILE__, [ civicrm_wp_mail_sync(), 'activate' ] );
 // Deactivation.
 register_deactivation_hook( __FILE__, [ civicrm_wp_mail_sync(), 'deactivate' ] );
 
-// Uninstall uses the 'uninstall.php' method.
-// See: http://codex.wordpress.org/Function_Reference/register_uninstall_hook
-
-
-
+/*
+ * Uninstall uses the 'uninstall.php' method.
+ * @see https://developer.wordpress.org/reference/functions/register_uninstall_hook/
+ */
