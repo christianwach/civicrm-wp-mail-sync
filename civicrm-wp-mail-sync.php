@@ -146,13 +146,13 @@ class CiviCRM_WP_Mail_Sync {
 	public function include_files() {
 
 		// Load our Admin utility class.
-		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/civicrm-wp-mail-sync-admin.php';
+		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/class-admin.php';
 
 		// Load our CiviCRM utility functions class.
-		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/civicrm-wp-mail-sync-civicrm.php';
+		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/class-civicrm.php';
 
 		// Load our WordPress utility functions class.
-		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/civicrm-wp-mail-sync-wp.php';
+		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/class-wordpress.php';
 
 	}
 
