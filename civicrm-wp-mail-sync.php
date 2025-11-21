@@ -64,7 +64,7 @@ class CiviCRM_WP_Mail_Sync {
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var object $admin The Admin Utilities object.
+	 * @var CiviCRM_WP_Mail_Sync_Admin
 	 */
 	public $admin;
 
@@ -73,7 +73,7 @@ class CiviCRM_WP_Mail_Sync {
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var object $civicrm The CiviCRM Utilities object.
+	 * @var CiviCRM_WP_Mail_Sync_CiviCRM
 	 */
 	public $civicrm;
 
@@ -82,7 +82,7 @@ class CiviCRM_WP_Mail_Sync {
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var object $wp The WordPress Utilities object.
+	 * @var CiviCRM_WP_Mail_Sync_WordPress
 	 */
 	public $wp;
 
@@ -107,7 +107,7 @@ class CiviCRM_WP_Mail_Sync {
 
 		// Only do this once.
 		static $done;
-		if ( isset( $done ) AND $done === true ) {
+		if ( isset( $done ) && true === $done ) {
 			return;
 		}
 
@@ -117,13 +117,9 @@ class CiviCRM_WP_Mail_Sync {
 			return;
 		}
 
-		// Load translation.
+		// Bootsrap plugin.
 		$this->enable_translation();
-
-		// Include files.
 		$this->include_files();
-
-		// Set up objects and references.
 		$this->setup_objects();
 
 		/**
@@ -145,13 +141,9 @@ class CiviCRM_WP_Mail_Sync {
 	 */
 	public function include_files() {
 
-		// Load our Admin utility class.
+		// Load class files.
 		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/class-admin.php';
-
-		// Load our CiviCRM utility functions class.
 		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/class-civicrm.php';
-
-		// Load our WordPress utility functions class.
 		include CIVICRM_WP_MAIL_SYNC_PLUGIN_PATH . 'includes/class-wordpress.php';
 
 	}
@@ -163,14 +155,10 @@ class CiviCRM_WP_Mail_Sync {
 	 */
 	public function setup_objects() {
 
-		// Instantiate our Admin utility class.
-		$this->admin = new CiviCRM_WP_Mail_Sync_Admin( $this );
-
-		// Instantiate our CiviCRM utility class.
+		// Instantiate objects.
+		$this->admin   = new CiviCRM_WP_Mail_Sync_Admin( $this );
 		$this->civicrm = new CiviCRM_WP_Mail_Sync_CiviCRM( $this );
-
-		// Instantiate our WordPress utility class.
-		$this->wp = new CiviCRM_WP_Mail_Sync_WordPress( $this );
+		$this->wp      = new CiviCRM_WP_Mail_Sync_WordPress( $this );
 
 	}
 

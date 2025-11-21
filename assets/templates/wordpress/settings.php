@@ -1,12 +1,24 @@
+<?php
+/**
+ * CiviCRM WordPress Mail Sync Uninstaller
+ *
+ * @package CiviCRM_WP_Mail_Sync
+ */
+
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
+
+?>
 <!-- assets/templates/wordpress/settings.php -->
 <div class="wrap" id="civiwpmailsync_admin_wrapper">
 
 	<h1><?php esc_html_e( 'CiviCRM WordPress Mail Sync', 'civicrm-wp-mail-sync' ); ?></a></h1>
 
 	<?php if ( ! empty( $messages ) ) : ?>
-		<?php echo $messages; ?>
+		<?php echo $messages; /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ ?>
 	<?php endif; ?>
 
+	<?php /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ ?>
 	<form method="post" id="civiwpmailsync_settings_form" action="<?php echo $this->admin_form_url_get(); ?>">
 
 		<?php wp_nonce_field( 'civiwpmailsync_settings_action', 'civiwpmailsync_settings_nonce' ); ?>
@@ -67,6 +79,3 @@
 	</form>
 
 </div><!-- /.wrap -->
-
-
-

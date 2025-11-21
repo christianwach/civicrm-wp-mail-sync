@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<ruleset name="CMW.WordPress">
+
+	<!-- Add source codes in the report. -->
+	<arg value="s" />
+	<arg name="colors" />
+
+	<!-- Check all PHP files in directory tree by default. -->
+	<arg name="extensions" value="php" />
+	<file>.</file>
+
+	<!-- Whenever possible, cache the scan results and re-use those for unchanged files on the next scan. -->
+	<arg name="cache" value=".phpcs/cache.json" />
+
+	<!-- Check 20 files in parallel. -->
+	<arg name="parallel" value="20" />
+
+	<!-- Set severity to 1 to see everything that isn't effectively turned off. -->
+	<arg name="severity" value="1" />
+
+	<rule ref="WordPress">
+
+		<!-- Allow slash-delimited hook names. -->
+		<exclude name="WordPress.NamingConventions.ValidHookName.UseUnderscores" />
+
+		<!-- I prefer my control structures. -->
+		<exclude name="WordPress.WhiteSpace.ControlStructureSpacing.BlankLineAfterEnd" />
+
+		<!-- PSR4: Allow short file names. -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+
+		<!-- Allow example code blocks. -->
+		<exclude name="Squiz.PHP.CommentedOutCode.Found" />
+		<exclude name="Squiz.Commenting.BlockComment.HasEmptyLineBefore" />
+
+		<!-- Allow TODOs at end of methods. -->
+		<exclude name="Squiz.Commenting.InlineComment.SpacingAfterAtFunctionEnd" />
+
+		<!-- Remove some checks to allow phpcbf to run in bulk mode. -->
+		<exclude name="WordPress.Security.NonceVerification.Missing" />
+		<exclude name="WordPress.Security.NonceVerification.Recommended" />
+
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array" value="civicrm-wp-mail-sync" />
+		</properties>
+	</rule>
+
+	<!-- Enforce short array syntax. -->
+	<rule ref="Generic.Arrays.DisallowShortArraySyntax.Found">
+		<severity>0</severity>
+	</rule>
+	<rule ref="Generic.Arrays.DisallowLongArraySyntax.Found" />
+
+	<!-- Nesting levels. -->
+	<rule ref="Generic.Metrics.NestingLevel">
+		<properties>
+			<!-- Warning level. -->
+            <property name="nestingLevel" value="7"/>
+			<!-- Error level. -->
+			<property name="absoluteNestingLevel" value="8" />
+		</properties>
+	</rule>
+
+	<exclude-pattern>assets/civicrm/*</exclude-pattern>
+
+</ruleset>

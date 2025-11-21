@@ -5,13 +5,10 @@
  * Handles general CiviCRM functionality.
  *
  * @package CiviCRM_WP_Mail_Sync
- * @since 0.1
  */
 
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
-
-
 
 /**
  * CiviCRM WordPress Mail Sync CiviCRM Utilities Class
@@ -27,7 +24,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 *
 	 * @since 0.2
 	 * @access public
-	 * @var object $plugin The plugin object.
+	 * @var CiviCRM_WP_Mail_Sync
 	 */
 	public $plugin;
 
@@ -36,7 +33,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var object $admin The Admin Utilities object.
+	 * @var CiviCRM_WP_Mail_Sync_Admin
 	 */
 	public $admin;
 
@@ -45,7 +42,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var object $wp The WordPress Utilities object.
+	 * @var CiviCRM_WP_Mail_Sync_WordPress
 	 */
 	public $wp;
 
@@ -54,16 +51,16 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 *
 	 * @since 0.1
 	 * @access public
-	 * @var str $civicrm_version The CiviCRM version.
+	 * @var string
 	 */
 	public $civicrm_version;
-
-
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 0.1
+	 *
+	 * @param CiviCRM_WP_Mail_Sync $plugin The plugin object.
 	 */
 	public function __construct( $plugin ) {
 
@@ -75,8 +72,6 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
 	/**
 	 * Initialise.
 	 *
@@ -86,10 +81,12 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 		// Store references to other objects.
 		$this->admin = $this->plugin->admin;
-		$this->wp = $this->plugin->wp;
+		$this->wp    = $this->plugin->wp;
 
+		/*
 		// Register hooks.
 		$this->register_hooks();
+		*/
 
 		/**
 		 * Broadcast that this class is now loaded.
@@ -100,8 +97,6 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
 	/**
 	 * Register hooks.
 	 *
@@ -110,23 +105,21 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	public function register_hooks() {
 
 		// Intercept CiviCRM Mailing before save.
-		//add_action( 'civicrm_pre', [ $this, 'template_before_save' ], 10, 4 );
+		add_action( 'civicrm_pre', [ $this, 'template_before_save' ], 10, 4 );
 
 		// Intercept CiviCRM Mailing after save.
-		//add_action( 'civicrm_post', [ $this, 'template_after_save' ], 10, 4 );
+		add_action( 'civicrm_post', [ $this, 'template_after_save' ], 10, 4 );
 
 		// Intercept CiviCRM Mailing email before send.
-		//add_action( 'civicrm_alterMailParams', [ $this, 'mailing_before_send' ], 10, 2 );
+		add_action( 'civicrm_alterMailParams', [ $this, 'mailing_before_send' ], 10, 2 );
 
 		// Intercept token values.
-		//add_filter( 'civicrm_tokenValues', [ $this, 'mailing_token_values' ], 10, 4 );
+		add_filter( 'civicrm_tokenValues', [ $this, 'mailing_token_values' ], 10, 4 );
 
 		// Intercept tokens.
-		//add_filter( 'civicrm_tokens', [ $this, 'mailing_tokens' ], 10, 1 );
+		add_filter( 'civicrm_tokens', [ $this, 'mailing_tokens' ], 10, 1 );
 
 	}
-
-
 
 	/**
 	 * Initialise CiviCRM if necessary.
@@ -138,7 +131,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	public function is_initialised() {
 
 		// Init only when CiviCRM is fully installed.
-		if ( ! defined( 'CIVICRM_INSTALLED' ) OR ! CIVICRM_INSTALLED ) {
+		if ( ! defined( 'CIVICRM_INSTALLED' ) || ! CIVICRM_INSTALLED ) {
 			return false;
 		}
 
@@ -152,38 +145,34 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
-	// -------------------------------------------------------------------------
-
-
+	// -----------------------------------------------------------------------------------
 
 	/**
 	 * Intercept template before it has been saved.
 	 *
 	 * @since 0.1
 	 *
-	 * @param string $op The type of database operation.
-	 * @param string $objectName The type of object.
-	 * @param integer $objectId The ID of the object.
-	 * @param object $objectRef The object.
+	 * @param string  $op The type of database operation.
+	 * @param string  $object_name The type of object.
+	 * @param integer $object_id The ID of the object.
+	 * @param object  $object_ref The object.
 	 */
-	public function template_before_save( $op, $objectName, $objectId, $objectRef ) {
+	public function template_before_save( $op, $object_name, $object_id, $object_ref ) {
 
 		// Target our object type.
-		if ( $objectName != 'Mailing' ) {
+		if ( 'Mailing' !== $object_name ) {
 			return;
 		}
 
 		// Maybe cast as an object.
-		if ( is_object( $objectRef ) ) {
-			$mailing = $objectRef;
+		if ( is_object( $object_ref ) ) {
+			$mailing = $object_ref;
 		} else {
-			$mailing = (object) $objectRef;
+			$mailing = (object) $object_ref;
 		}
 
 		// Make sure we have a message template.
-		if ( empty( $mailing->body_html ) AND empty( $mailing->body_text ) ) {
+		if ( empty( $mailing->body_html ) && empty( $mailing->body_text ) ) {
 			return;
 		}
 
@@ -191,18 +180,16 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$e = new \Exception;
 		$trace = $e->getTraceAsString();
 		error_log( print_r( [
-			'method' => __METHOD__,
-			'op' => $op,
-			'objectName' => $objectName,
-			'objectId' => $objectId,
-			'objectRef' => $objectRef,
+			'method'      => __METHOD__,
+			'op'          => $op,
+			'object_name' => $object_name,
+			'object_id'   => $object_id,
+			'object_ref'  => $object_ref,
 			//'backtrace' => $trace,
 		], true ) );
 		*/
 
 	}
-
-
 
 	/**
 	 * Intercept template after it has been saved.
@@ -218,27 +205,27 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 *
 	 * @since 0.1
 	 *
-	 * @param string $op The type of database operation.
-	 * @param string $objectName The type of object.
-	 * @param integer $objectId The ID of the object.
-	 * @param object $objectRef The object.
+	 * @param string  $op The type of database operation.
+	 * @param string  $object_name The type of object.
+	 * @param integer $object_id The ID of the object.
+	 * @param object  $object_ref The object.
 	 */
-	public function template_after_save( $op, $objectName, $objectId, $objectRef ) {
+	public function template_after_save( $op, $object_name, $object_id, $object_ref ) {
 
 		// Target our object type.
-		if ( $objectName != 'Mailing' ) {
+		if ( 'Mailing' !== $object_name ) {
 			return;
 		}
 
 		// Maybe cast as an object.
-		if ( is_object( $objectRef ) ) {
-			$mailing = $objectRef;
+		if ( is_object( $object_ref ) ) {
+			$mailing = $object_ref;
 		} else {
-			$mailing = (object) $objectRef;
+			$mailing = (object) $object_ref;
 		}
 
 		// Do not sync on send.
-		if ( empty( $objectRef->scheduled_id ) ) {
+		if ( empty( $object_ref->scheduled_id ) ) {
 			return;
 		}
 
@@ -246,52 +233,48 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$e = new \Exception;
 		$trace = $e->getTraceAsString();
 		error_log( print_r( [
-			'method' => __METHOD__,
-			'op' => $op,
-			'objectName' => $objectName,
-			'objectId' => $objectId,
-			'objectRef' => $objectRef,
+			'method'      => __METHOD__,
+			'op'          => $op,
+			'object_name' => $object_name,
+			'object_id'   => $object_id,
+			'object_ref'  => $object_ref,
 			//'backtrace' => $trace,
 		], true ) );
 		*/
 
 	}
 
-
-
-	// -------------------------------------------------------------------------
-
-
+	// -----------------------------------------------------------------------------------
 
 	/**
 	 * Create a WordPress Post from an email template in CiviCRM prior to 4.6.
 	 *
 	 * @since 0.1
 	 *
-	 * @param string $op The type of database operation.
-	 * @param string $objectName The type of object.
-	 * @param integer $objectId The ID of the object.
-	 * @param object $objectRef The object.
+	 * @param string  $op The type of database operation.
+	 * @param string  $object_name The type of object.
+	 * @param integer $object_id The ID of the object.
+	 * @param object  $object_ref The object.
 	 */
-	public function template_before_save_legacy( $op, $objectName, $objectId, $objectRef ) {
+	public function template_before_save_legacy( $op, $object_name, $object_id, $object_ref ) {
 
 		// Target our operation.
-		if ( $op != 'edit' ) {
+		if ( 'edit' !== $op ) {
 			return;
 		}
 
 		// Target our object type.
-		if ( $objectName != 'Mailing' ) {
+		if ( 'Mailing' !== $object_name ) {
 			return;
 		}
 
 		// Do not sync on send.
-		if ( isset( $objectRef['now'] ) AND $objectRef['now'] == 1 ) {
+		if ( isset( $object_ref['now'] ) && 1 === (int) $object_ref['now'] ) {
 			return;
 		}
 
 		// Make sure we have a message template.
-		if ( ! isset( $objectRef['body_html'] ) AND ! isset( $objectRef['body_text'] ) ) {
+		if ( ! isset( $object_ref['body_html'] ) && ! isset( $object_ref['body_text'] ) ) {
 			return;
 		}
 
@@ -299,17 +282,17 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$e = new \Exception;
 		$trace = $e->getTraceAsString();
 		error_log( print_r( [
-			'method' => __METHOD__,
-			'op' => $op,
-			'objectName' => $objectName,
-			'objectId' => $objectId,
-			'objectRef' => $objectRef,
+			'method'      => __METHOD__,
+			'op'          => $op,
+			'object_name' => $object_name,
+			'object_id'   => $object_id,
+			'object_ref'  => $object_ref,
 			//'backtrace' => $trace,
 		], true ) );
 		*/
 
 		// Create a WordPress Post from this data.
-		$post_id = $this->wp->create_post_from_mailing( $objectId, $objectRef );
+		$post_id = $this->wp->create_post_from_mailing( $object_id, $object_ref );
 
 		// Make sure we created a WordPress Post successfully.
 		if ( ! $post_id ) {
@@ -320,34 +303,34 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$permalink = get_permalink( $post_id );
 
 		// Append to plain text, if present.
-		if ( isset( $objectRef['body_text'] ) ) {
+		if ( isset( $object_ref['body_text'] ) ) {
 
 			// Get link for insertion.
 			$plain_text = $this->mailing_url_get_plain( $post_id );
 
 			// Get possible position of an existing instance of a link.
-			$offset = strpos( $objectRef['body_text'], $plain_text );
+			$offset = strpos( $object_ref['body_text'], $plain_text );
 
-			// Do we already have an inserted link? (happens in re-used CiviCRM Mailings)
+			// Do we already have an inserted link? Happens in re-used CiviCRM Mailings.
 			if ( false !== $offset ) {
 
 				// Strip everything from that point to the end.
-				$objectRef['body_text'] = substr_replace( $objectRef['body_text'], '', $offset );
+				$object_ref['body_text'] = substr_replace( $object_ref['body_text'], '', $offset );
 
 			} else {
 
 				// Give new link some space.
-				$objectRef['body_text'] .= "\r\n\r\n";
+				$object_ref['body_text'] .= "\r\n\r\n";
 
 			}
 
 			// Append to text and insert permalink.
-			$objectRef['body_text'] .= $plain_text . "\r\n" . $permalink . "\r\n";
+			$object_ref['body_text'] .= $plain_text . "\r\n" . $permalink . "\r\n";
 
 		}
 
 		// Apply to html, if present.
-		if ( isset( $objectRef['body_html'] ) ) {
+		if ( isset( $object_ref['body_html'] ) ) {
 
 			// Get link for insertion.
 			$html = $this->mailing_url_get_html( $permalink, $post_id );
@@ -355,23 +338,23 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			// Wrap this in a div.
 			$html = '<div class="civicrm_wp_mail_sync_url">' . $html . '</div>';
 
-			// Do we already have an inserted link (happens in re-used CiviCRM Mailings)
-			if ( false !== strpos( $objectRef['body_html'], '<!--civicrm-wp-mail-sync-url-->' ) ) {
+			// Do we already have an inserted link? Happens in re-used CiviCRM Mailings.
+			if ( false !== strpos( $object_ref['body_html'], '<!--civicrm-wp-mail-sync-url-->' ) ) {
 
 				// Yes, replace what's between the html comments.
-				$objectRef['body_html'] = preg_replace(
+				$object_ref['body_html'] = preg_replace(
 					'#<!--civicrm-wp-mail-sync-url-->(.*?)<!--civicrm-wp-mail-sync-url-->#s',
-					$html, // Replacement
-					$objectRef['body_html'] // Source
+					$html, // Replacement.
+					$object_ref['body_html'] // Source.
 				);
 
 			} else {
 
-				// Wrap this with two comments (so we can tell if this is a reused template above)
+				// Wrap this with two comments so we can tell if this is a reused template above.
 				$html = '<!--civicrm-wp-mail-sync-url-->' . $html . '<!--/civicrm-wp-mail-syncurl-->';
 
 				// Append to HTML.
-				$objectRef['body_html'] .= "\r\n\r\n" . $html;
+				$object_ref['body_html'] .= "\r\n\r\n" . $html;
 
 			}
 
@@ -379,20 +362,18 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
 	/**
 	 * Intercept every email in a CiviCRM Mailing before it is sent.
 	 *
 	 * @since 0.1
 	 *
-	 * @param array $params The message parameters.
+	 * @param array  $params The message parameters.
 	 * @param string $context The message context.
 	 */
 	public function mailing_before_send( $params, $context = null ) {
 
 		// Target our context.
-		if ( $context != 'civimail' ) {
+		if ( 'civimail' !== $context ) {
 			return;
 		}
 
@@ -403,16 +384,14 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$e = new \Exception;
 		$trace = $e->getTraceAsString();
 		error_log( print_r( [
-			'method' => __METHOD__,
-			'params' => $params,
-			'context' => $context,
+			'method'      => __METHOD__,
+			'params'      => $params,
+			'context'     => $context,
 			//'backtrace' => $trace,
 		], true ) );
 		*/
 
 	}
-
-
 
 	/**
 	 * Intercept token values.
@@ -420,38 +399,35 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @since 0.1
 	 *
 	 * @param array $values The token values.
-	 * @param array $contact_id An array of numeric IDs of the CiviCRM Contacts.
-	 * @param int $job_id The job ID.
+	 * @param array $contact_ids An array of numeric IDs of the CiviCRM Contacts.
+	 * @param int   $job_id The job ID.
 	 * @param array $tokens The tokens whose values need replacing.
 	 */
 	public function mailing_token_values( &$values, $contact_ids, $job_id = null, $tokens = [] ) {
-
-		// Disabled.
-		return;
 
 		/*
 		$e = new \Exception;
 		$trace = $e->getTraceAsString();
 		error_log( print_r( [
-			'method' => __METHOD__,
-			'values' => $values,
+			'method'      => __METHOD__,
+			'values'      => $values,
 			'contact_ids' => $contact_ids,
-			'job_id' => $job_id,
-			'tokens' => $tokens,
+			'job_id'      => $job_id,
+			'tokens'      => $tokens,
 			//'backtrace' => $trace,
 		], true ) );
 		*/
 
-		// Target our token
+		/*
+		// Target our token.
 		if ( ! isset( $tokens['mailing']['viewUrl'] ) ) {
 			return;
 		}
 
 		// Replace view url token?
+		*/
 
 	}
-
-
 
 	/**
 	 * Intercept tokens.
@@ -459,12 +435,8 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @since 0.1
 	 *
 	 * @param array $tokens The tokens.
-	 * @return void
 	 */
 	public function mailing_tokens( $tokens ) {
-
-		// Disabled.
-		return;
 
 		// Unset view url token?
 
@@ -480,11 +452,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
-	// -------------------------------------------------------------------------
-
-
+	// -----------------------------------------------------------------------------------
 
 	/**
 	 * Get a personalised message.
@@ -493,7 +461,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 *
 	 * @param int $mailing_id The numeric ID of the CiviCRM Mailing.
 	 * @param int $contact_id The numeric ID of the CiviCRM Contact.
-	 * @param str $type Either 'html' or 'text' (default 'html')
+	 * @param str $type Either 'html' or 'text'. Default 'html'.
 	 * @return str $message The formatted message.
 	 */
 	public function mailing_render( $mailing_id, $contact_id = null, $type = 'html' ) {
@@ -504,7 +472,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		// If we don't have a passed contact, use logged in user.
-		if ( is_null( $contact_id ) AND is_user_logged_in() ) {
+		if ( is_null( $contact_id ) && is_user_logged_in() ) {
 
 			// Get current user.
 			$current_user = wp_get_current_user();
@@ -515,13 +483,16 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		}
 
 		/*
-		// Replace tokens (fails due to buggy permissions)
+		// Replace tokens - fails due to buggy permissions.
 		$page = new CRM_Mailing_Page_View();
 		$value = $page->run( $mailing_id, $contact_id, FALSE );
 		*/
 
-		// The following copied from CRM_Mailing_Page_Preview.
-		// @see CRM/Mailing/Page/Preview.php
+		/*
+		 * The following copied from CRM_Mailing_Page_Preview.
+		 *
+		 * @see CRM/Mailing/Page/Preview.php
+		 */
 
 		// Init CiviCRM Mailing.
 		$mailing = new CRM_Mailing_BAO_Mailing();
@@ -533,7 +504,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		if ( ! $mailing->find( true ) ) {
 
 			// Say what?
-			$text = __( '<p>Sorry, this email has not been found.</p>', 'civicrm-wp-mail-sync' );
+			$text = '<p>' . esc_html__( 'Sorry, this email has not been found.', 'civicrm-wp-mail-sync' ) . '</p>';
 
 			/**
 			 * Filter the "not found" message.
@@ -555,7 +526,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		if ( ! $this->mailing_is_viewable( $mailing, $contact_id ) ) {
 
 			// Say what?
-			$text = __( '<p>Sorry, but you are not allowed to view this email.</p>', 'civicrm-wp-mail-sync' );
+			$text = '<p>' . esc_html__( 'Sorry, but you are not allowed to view this email.', 'civicrm-wp-mail-sync' ) . '</p>';
 
 			/**
 			 * Filter the "not allowed" message.
@@ -586,27 +557,37 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 			$mailing->id
 		);
 
-		// Get details of contact with token value including Custom Field Token Values. See CRM-3734
-		$returnProperties = $mailing->getReturnProperties();
-		$params = [ 'contact_id' => $contact_id ];
+		// Get details of contact with token value including Custom Field Token Values. See CRM-3734.
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
+		$return_properties = $mailing->getReturnProperties();
+		$params            = [ 'contact_id' => $contact_id ];
 
 		// Get details.
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
 		$details = CRM_Utils_Token::getTokenDetails(
 			$params,
-			$returnProperties,
-			TRUE, TRUE, NULL,
+			$return_properties,
+			true,
+			true,
+			null,
 			$mailing->getFlattenedTokens(),
 			'CRM_Mailing_Page_Preview'
 		);
 
 		// What?
 		$mime = $mailing->compose(
-			NULL, NULL, NULL, $contact_id,
-			$mailing->from_email, $mailing->from_email,
-			TRUE, $details[0][$contact_id], $attachments
+			null,
+			null,
+			null,
+			$contact_id,
+			$mailing->from_email,
+			$mailing->from_email,
+			true,
+			$details[0][ $contact_id ],
+			$attachments
 		);
 
-		if ( $type == 'html' ) {
+		if ( 'html' === $type ) {
 			$value = $mime->getHTMLBody();
 		} else {
 			$value = $mime->getTXTBody();
@@ -617,19 +598,15 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
-	// -------------------------------------------------------------------------
-
-
+	// -----------------------------------------------------------------------------------
 
 	/**
 	 * Get text to prefix "View in Browser" link in a plain text message.
 	 *
 	 * @since 0.1
 	 *
-	 * @param int The numeric ID of the WordPress Post.
-	 * @return str Text and link to "View in browser".
+	 * @param int $post_id The numeric ID of the WordPress Post.
+	 * @return str $plain_text Text and link to "View in browser".
 	 */
 	public function mailing_url_get_plain( $post_id = null ) {
 
@@ -649,23 +626,23 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
 	/**
 	 * Get text and link to add "View in Browser" link to an HTML message.
 	 *
 	 * @since 0.1
 	 *
-	 * @param str The permalink of the WordPress Post.
-	 * @param int The numeric ID of the WordPress Post.
-	 * @return str Text and link to "View in browser".
+	 * @param str $permalink The permalink of the WordPress Post.
+	 * @param int $post_id The numeric ID of the WordPress Post.
+	 * @return str $html Text and link to "View in browser".
 	 */
 	public function mailing_url_get_html( $permalink, $post_id = null ) {
 
 		// Define html and insert permalink.
 		$html = sprintf(
-			__( 'Unable to view this email? <a href="%s">Click here to view it in your browser</a>.', 'civicrm-wp-mail-sync' ),
-			$permalink
+			/* translators: 1: The opening anchor tag, 2: The closing anchor tag. */
+			__( 'Unable to view this email? %1$sClick here to view it in your browser%2$s.', 'civicrm-wp-mail-sync' ),
+			'<a href="' . esc_url( $permalink ) . '">',
+			'</a>'
 		);
 
 		/**
@@ -681,11 +658,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
-	// -------------------------------------------------------------------------
-
-
+	// -----------------------------------------------------------------------------------
 
 	/**
 	 * Check if email is viewable.
@@ -693,24 +666,18 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 	 * @since 0.1
 	 *
 	 * @param object $mailing The CiviCRM Mailing object.
-	 * @param int $contact_id The numeric ID of the CiviCRM Contact.
+	 * @param int    $contact_id The numeric ID of the CiviCRM Contact.
 	 * @return bool $is_viewable True if viewable, false otherwise.
 	 */
 	public function mailing_is_viewable( $mailing, $contact_id = null ) {
 
 		// Allow if the email is public and user has permissions.
-		if (
-			$mailing->visibility == 'Public Pages' AND
-			CRM_Core_Permission::check('view public CiviMail content')
-		) {
+		if ( 'Public Pages' === $mailing->visibility && CRM_Core_Permission::check( 'view public CiviMail content' ) ) {
 			return true;
 		}
 
 		// If user is an admin, always allow.
-		if (
-			CRM_Core_Permission::check('administer CiviCRM') OR
-			CRM_Core_Permission::check('access CiviMail')
-		) {
+		if ( CRM_Core_Permission::check( 'administer CiviCRM' ) || CRM_Core_Permission::check( 'access CiviMail' ) ) {
 			return true;
 		}
 
@@ -736,8 +703,6 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		return false;
 
 	}
-
-
 
 	/**
 	 * Get all CiviCRM Mailings.
@@ -768,7 +733,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$result = civicrm_api( 'Mailing', 'get', $params );
 
 		// Bail if there's an error.
-		if ( ! empty( $result['is_error'] ) AND $result['is_error'] == 1 ) {
+		if ( ! empty( $result['is_error'] ) && 1 === (int) $result['is_error'] ) {
 			return $mailings;
 		}
 
@@ -784,8 +749,6 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		return $mailings;
 
 	}
-
-
 
 	/**
 	 * Get all CiviCRM Mailings for a Contact.
@@ -807,23 +770,25 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 		// Construct array.
 		$params = [
-			'version' => 3,
+			'version'    => 3,
 			'contact_id' => $contact_id,
-			/*
-			//'type' => 'Delivered',
-			'options' => [
-				'Delivered' => 'Delivered',
-				'Bounced' => 'Bounced',
-				//'limit' => '100000',
-			],
-			*/
 		];
+
+		/*
+		// Refine params.
+		$params['type']    = 'Delivered';
+		$params['options'] = [
+			'Delivered' => 'Delivered',
+			'Bounced'   => 'Bounced',
+			'limit'     => '100000',
+		];
+		*/
 
 		// Call API.
 		$result = civicrm_api( 'MailingContact', 'get', $params );
 
 		// Bail if there's an error.
-		if ( ! empty( $result['is_error'] ) AND $result['is_error'] == 1 ) {
+		if ( ! empty( $result['is_error'] ) && 1 === (int) $result['is_error'] ) {
 			return $mailings;
 		}
 
@@ -840,11 +805,7 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
-	// -------------------------------------------------------------------------
-
-
+	// -----------------------------------------------------------------------------------
 
 	/**
 	 * Get CiviCRM contact ID by WordPress user ID.
@@ -877,8 +838,6 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
 	/**
 	 * Get all CiviCRM Contacts for a given Mailing ID.
 	 *
@@ -900,17 +859,17 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		// Construct array.
 		$params = [
 			'version' => 3,
-			'id' => $mailing_id,
+			'id'      => $mailing_id,
 			'options' => [
-				'limit' => '0',
+				'limit' => 0,
 			],
 		];
 
-		// Call API
+		// Call API.
 		$result = civicrm_api( 'MailingRecipients', 'get', $params );
 
 		// Bail if there's an error.
-		if ( ! empty( $result['is_error'] ) AND $result['is_error'] == 1 ) {
+		if ( ! empty( $result['is_error'] ) && 1 === (int) $result['is_error'] ) {
 			return $contacts;
 		}
 
@@ -926,8 +885,6 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		return $contacts;
 
 	}
-
-
 
 	/**
 	 * Check if a CiviCRM Contact was a recipient of a CiviCRM Mailing.
@@ -952,10 +909,10 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		$e = new \Exception;
 		$trace = $e->getTraceAsString();
 		error_log( print_r( [
-			'method' => __METHOD__,
-			'mailing_id' => $mailing_id,
-			'contact_id' => $contact_id,
-			'mailings' => $mailings,
+			'method'      => __METHOD__,
+			'mailing_id'  => $mailing_id,
+			'contact_id'  => $contact_id,
+			'mailings'    => $mailings,
 			//'backtrace' => $trace,
 		], true ) );
 		*/
@@ -964,10 +921,10 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 		if ( ! empty( $mailings ) ) {
 
 			// Get the Recipient IDs.
-			$mailing_ids = array_keys( $mailings );
+			$mailing_ids = array_map( 'intval', array_keys( $mailings ) );
 
 			// Is our Mailing in this array?
-			if ( in_array( $mailing_id, $mailing_ids ) ) {
+			if ( in_array( (int) $mailing_id, $mailing_ids, true ) ) {
 				return true;
 			}
 
@@ -978,9 +935,4 @@ class CiviCRM_WP_Mail_Sync_CiviCRM {
 
 	}
 
-
-
-} // Class ends.
-
-
-
+}
