@@ -1,16 +1,35 @@
-<?php /*
---------------------------------------------------------------------------------
-Plugin Name: CiviCRM WordPress Mail Sync
-Plugin URI: https://github.com/christianwach/civicrm-wp-mail-sync
-Description: Create WordPress Posts from CiviCRM Mailings to allow your Users to view their emails in WordPress. <strong>NOTE: This plugin is not for use in production.</strong>
-Author: Christian Wach
-Version: 0.2.1
-Author URI: http://haystack.co.uk
-Text Domain: civicrm-wp-mail-sync
-Domain Path: /languages
-Depends: CiviCRM
---------------------------------------------------------------------------------
-*/
+<?php
+/**
+ * CiviCRM WordPress Mail Sync
+ *
+ * Plugin Name:       CiviCRM WordPress Mail Sync
+ * Description:       Create WordPress Posts from CiviCRM Mailings to allow your Users to view their emails in WordPress.
+ * Plugin URI:        https://github.com/christianwach/civicrm-wp-mail-sync
+ * GitHub Plugin URI: https://github.com/christianwach/civicrm-wp-mail-sync
+ * Version:           0.2.1
+ * Author:            Christian Wach
+ * Author URI:        https://haystack.co.uk
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * Requires at least: 4.9
+ * Requires PHP:      7.4
+ * Text Domain:       civicrm-wp-mail-sync
+ * Domain Path:       /languages
+ *
+ * @package CiviCRM_WP_Mail_Sync
+ * @link    https://github.com/christianwach/civicrm-wp-profile-sync
+ * @license GPL v2 or later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 
 
